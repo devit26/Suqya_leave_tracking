@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="fr" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">Suivi des congés</title>
+<style>
+  :root{
+    --bg: #F6F7F5;
+    --surface: #FFFFFF;
+    --border: #E1E4E1;
+    --ink: #1B2420;
+    --ink-soft: #5B6660;
+    --accent: #2F6F5E;
+    --accent-soft: #E7F0EC;
+    --warn: #B4552C;
+    --warn-soft: #FBEDE5;
+    --radius: 14px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  header.top{
+    display:flex; align-items:baseline; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    margin-bottom: 18px;
+  }
+  header.top h1{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  header.top .header-right{
+    display:flex; align-items:center; gap:8px; flex-wrap: wrap;
+  }
+  header.top .rule{
+    font-size: 12.5px; color: var(--ink-soft);
+    background: var(--accent-soft);
+    padding: 5px 10px;
+    border-radius: 999px;
+  }
+
+  .lang-switch{
+    display:flex; border: 1px solid var(--border); border-radius: 999px;
+    overflow:hidden; background: var(--surface); flex-shrink:0;
+  }
+  .lang-switch button{
+    border:none; background: transparent; padding: 6px 12px;
+    font-size: 12.5px; font-weight:700; color: var(--ink-soft);
+  }
+  .lang-switch button.active{ background: var(--accent); color: white; }
+
+  .toolbar{
+    display:flex; gap:10px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .search{
+    flex: 1 1 220px;
+    position: relative;
+  }
+  .search input{
+    width: 100%;
+    padding: 11px 14px 11px 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: 14.5px;
+    color: var(--ink);
+    outline: none;
+  }
+  .search input:focus{ border-color: var(--accent); }
+  .search svg{ position:absolute; left:12px; top:50%; transform: translateY(-50%); opacity:0.45; }
+
+  button{ font-family: var(--font-body); cursor: pointer; }
+  .btn{
+    padding: 11px 16px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 14.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .btn-primary{ background: var(--accent); color: white; }
+  .btn-primary:hover{ background: #275c4e; }
+  .btn-ghost{ background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+  .btn-ghost:hover{ border-color: var(--accent); }
+  .btn-icon{ width:44px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .btn-danger-text{ background:none; border:none; color: var(--warn); font-size: 13px; font-weight:600; padding: 4px 6px;}
+
+  .count-line{ font-size: 13px; color: var(--ink-soft); margin: 4px 2px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .count-line .sync{ font-size:11.5px; }
+  .count-line .sync.ok{ color: var(--accent); }
+  .count-line .sync.err{ color: var(--warn); }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .row-main{
+    display:flex; align-items:center; gap: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+  .avatar{
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-display); font-weight:600; font-size: 15px;
+    flex-shrink: 0;
+  }
+  .who{ flex: 1 1 auto; min-width: 0; }
+  .who .name{ font-weight: 600; font-size: 15px; }
+  .who .role{ font-size: 12px; color: var(--accent); font-weight:600; margin-top:2px; }
+  .who .hire{ font-size: 12.5px; color: var(--ink-soft); margin-top:1px; }
+
+  .stats{ display:flex; gap: 18px; flex-shrink:0; }
+  .stat{ text-align:center; min-width: 44px; }
+  .stat .num{ font-family: var(--font-display); font-size: 19px; font-weight:600; line-height:1; }
+  .stat .lbl{ font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing:0.03em; margin-top:3px; }
+  .stat.neg .num{ color: var(--warn); }
+  .breakdown{ display:flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .bitem{ background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size:12.5px; color: var(--ink-soft); }
+  .bitem b{ color: var(--ink); font-size:14px; }
+
+  .chev{ transition: transform 0.18s ease; opacity:0.4; flex-shrink:0; }
+  .card.open .chev{ transform: rotate(90deg); }
+
+  .detail{
+    display:none;
+    border-top: 1px solid var(--border);
+    padding: 16px;
+    background: #FBFCFB;
+  }
+  .card.open .detail{ display:block; }
+
+  .ladder{ display:flex; align-items:center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .ladder .dots{ display:flex; gap: 4px; }
+  .ladder .dot{ width: 9px; height:9px; border-radius:50%; background: var(--border); }
+  .ladder .dot.filled{ background: var(--accent); }
+  .ladder .txt{ font-size: 12.5px; color: var(--ink-soft); }
+
+  .detail-actions{ display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+  .history-title{ font-size: 12px; text-transform: uppercase; letter-spacing:0.04em; color: var(--ink-soft); margin: 6px 0 8px; }
+  .leave-item{
+    display:flex; align-items:flex-start; justify-content: space-between; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  .leave-item:last-child{ border-bottom:none; }
+  .leave-item .dates{ color: var(--ink); }
+  .leave-item .days{ color: var(--ink-soft); margin-left:8px; }
+  .leave-item .meta{ display:block; color: var(--ink-soft); font-size:12px; margin-top:2px; }
+  .leave-item .meta a{ color: var(--accent); font-weight:600; text-decoration:none; }
+  .leave-item .meta a:hover{ text-decoration:underline; }
+  .empty-hist{ font-size: 13px; color: var(--ink-soft); padding: 6px 0; }
+
+  .empty-state{
+    text-align:center; padding: 60px 20px; color: var(--ink-soft);
+  }
+  .empty-state svg{ opacity:0.3; margin-bottom: 14px; }
+  .empty-state p{ font-size: 14.5px; margin: 0 0 16px; }
+
+  /* Modal */
+  .overlay{
+    display:none; position: fixed; inset:0; background: rgba(20,26,22,0.42);
+    align-items:flex-end; justify-content:center; z-index: 50;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    background: var(--surface);
+    width: 100%; max-width: 460px;
+    border-radius: 18px 18px 0 0;
+    padding: 22px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+    max-height: 88vh; overflow-y: auto;
+  }
+  @media (min-width: 640px){
+    .overlay{ align-items:center; }
+    .modal{ border-radius: 18px; }
+  }
+  .modal h2{ font-family: var(--font-display); font-size: 20px; margin: 0 0 4px; }
+  .modal .sub{ font-size: 13px; color: var(--ink-soft); margin: 0 0 18px; }
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size: 12.5px; font-weight:600; color: var(--ink-soft); margin-bottom:5px; }
+  .field input, .field select{
+    width:100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    font-size: 14.5px; font-family: var(--font-body); color: var(--ink); outline:none;
+  }
+  .field input:focus{ border-color: var(--accent); }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .modal-actions{ display:flex; gap:10px; margin-top: 18px; }
+  .modal-actions .btn{ flex:1; }
+  .err{ color: var(--warn); font-size: 12.5px; margin: -6px 0 12px; min-height: 1px; }
+
+  .toast{
+    position: fixed; bottom: 20px; left:50%; transform: translateX(-50%);
+    background: var(--ink); color: white; padding: 10px 18px; border-radius: 999px;
+    font-size: 13.5px; z-index: 100; opacity:0; pointer-events:none; transition: opacity 0.25s ease;
+    max-width: 90vw; text-align:center;
+  }
+  .toast.show{ opacity:1; }
+
+  .loading{ text-align:center; padding: 60px 20px; color: var(--ink-soft); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <h1 id="appTitle">Suivi des congés</h1>
+    <div class="header-right">
+      <span class="rule" id="ruleText">1 jour acquis / 7 jours travaillés</span>
+      <div class="lang-switch" role="group" aria-label="Langue / Language">
+        <button type="button" id="langFr" data-lang="fr">FR</button>
+        <button type="button" id="langEn" data-lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Rechercher un employé…">
+    </div>
+    <button class="btn btn-ghost btn-icon" id="openSettings" title="Connexion Google Sheets">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="btn btn-primary" id="openAddEmployee">+ Employé</button>
+  </div>
+
+  <div class="count-line">
+    <span id="countText"></span>
+    <span class="sync" id="syncStatus"></span>
+  </div>
+
+  <div id="listContainer">
+    <div class="loading" id="initialLoading">Chargement…</div>
+  </div>
+</div>
+
+<!-- Modal: Paramètres de connexion -->
+<div class="overlay" id="overlaySettings">
+  <div class="modal">
+    <h2 id="settingsModalTitle">Connexion Google Sheets</h2>
+    <p class="sub" id="settingsModalSub">Collez l'URL de votre Web App Apps Script (se termine par <code>/exec</code>). Elle est enregistrée uniquement sur cet appareil/navigateur.</p>
+    <div class="field">
+      <label for="settingsUrl" id="settingsUrlLabel">URL du Web App</label>
+      <input type="text" id="settingsUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="err" id="settingsErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelSettings">Fermer</button>
+      <button class="btn btn-primary" id="confirmSettings">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ajouter employé -->
+<div class="overlay" id="overlayAdd">
+  <div class="modal">
+    <h2 id="addModalTitle">Nouvel employé</h2>
+    <p class="sub" id="addModalSub">La date d'embauche sert de point de départ pour le calcul des congés acquis.</p>
+    <div class="field">
+      <label for="newName" id="newNameLabel">Nom complet</label>
+      <input type="text" id="newName" placeholder="ex : Aïcha Moussa">
+    </div>
+    <div class="field">
+      <label for="newRole" id="newRoleLabel">Poste</label>
+      <input type="text" id="newRole" placeholder="ex : Chauffeur, Électricien…">
+    </div>
+    <div class="field">
+      <label for="newHireDate" id="newHireDateLabel">Date d'embauche</label>
+      <input type="date" id="newHireDate">
+    </div>
+    <div class="err" id="addErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelAdd">Annuler</button>
+      <button class="btn btn-primary" id="confirmAdd">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Enregistrer un congé -->
+<div class="overlay" id="overlayLeave">
+  <div class="modal">
+    <h2 id="leaveModalTitle">Enregistrer un congé</h2>
+    <p class="sub" id="leaveForWho"></p>
+    <div class="field-row">
+      <div class="field">
+        <label for="leaveStart" id="leaveStartLabel">Du</label>
+        <input type="date" id="leaveStart">
+      </div>
+      <div class="field">
+        <label for="leaveEnd" id="leaveEndLabel">Au</label>
+        <input type="date" id="leaveEnd">
+      </div>
+    </div>
+    <div class="field">
+      <label for="leaveReason" id="leaveReasonLabel">Motif (optionnel)</label>
+      <input type="text" id="leaveReason" placeholder="ex : Congé annuel, raison familiale…">
+    </div>
+    <div class="field">
+      <label for="leaveAttachment" id="leaveAttachmentLabel">Justificatif — photo (optionnel)</label>
+      <input type="file" id="leaveAttachment" accept="image/*">
+    </div>
+    <div class="err" id="leaveErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelLeave">Annuler</button>
+      <button class="btn btn-primary" id="confirmLeave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Absence injustifiée -->
+<div class="overlay" id="overlayAbsence">
+  <div class="modal">
+    <h2 id="absenceModalTitle">Jours chômés sans explication</h2>
+    <p class="sub" id="absenceForWho">Ces jours seront déduits du solde de congé restant.</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="absenceStart" id="absenceStartLabel">Du</label>
+        <input type="date" id="absenceStart">
+      </div>
+      <div class="field">
+        <label for="absenceEnd" id="absenceEndLabel">Au</label>
+        <input type="date" id="absenceEnd">
+      </div>
+    </div>
+    <div class="err" id="absenceErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelAbsence">Annuler</button>
+      <button class="btn btn-primary" id="confirmAbsence">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==== CONFIGURATION ====
+const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbww7iKBukJahXJJw_wYpzbNA1mBARX8XAj9pu24vFXEVj_oZkaK_3HDlLkKu8jOemIN1Q/exec";
+// ========================
+
+let API_URL = CONFIG_API_URL || localStorage.getItem('conges_api_url') || '';
+
+// ==== I18N ====
+const TRANSLATIONS = {
+  fr: {
+    pageTitle: "Suivi des congés",
+    appTitle: "Suivi des congés",
+    ruleText: "1 jour acquis / 7 jours travaillés",
+    searchPlaceholder: "Rechercher un employé…",
+    settingsBtnTitle: "Connexion Google Sheets",
+    addEmployeeBtn: "+ Employé",
+    initialLoading: "Chargement…",
+
+    settingsModalTitle: "Connexion Google Sheets",
+    settingsModalSub: "Collez l'URL de votre Web App Apps Script (se termine par <code>/exec</code>). Elle est enregistrée uniquement sur cet appareil/navigateur.",
+    settingsUrlLabel: "URL du Web App",
+    settingsUrlPlaceholder: "https://script.google.com/macros/s/.../exec",
+    settingsErrInvalid: "L'URL doit commencer par https://script.google.com/ et se terminer par /exec.",
+    btnClose: "Fermer",
+    btnSave: "Enregistrer",
+
+    addModalTitle: "Nouvel employé",
+    addModalSub: "La date d'embauche sert de point de départ pour le calcul des congés acquis.",
+    newNameLabel: "Nom complet",
+    newNamePlaceholder: "ex : Aïcha Moussa",
+    newRoleLabel: "Poste",
+    newRolePlaceholder: "ex : Chauffeur, Électricien…",
+    newHireDateLabel: "Date d'embauche",
+    addErrName: "Le nom est requis.",
+    addErrHireRequired: "La date d'embauche est requise.",
+    addErrHireFuture: "La date d'embauche ne peut pas être dans le futur.",
+    addErrSave: "Erreur d'enregistrement — réessayez.",
+    btnCancel: "Annuler",
+    btnAdd: "Ajouter",
+
+    leaveModalTitle: "Enregistrer un congé",
+    leaveForWho: (name) => `Pour ${name}`,
+    leaveStartLabel: "Du",
+    leaveEndLabel: "Au",
+    leaveReasonLabel: "Motif (optionnel)",
+    leaveReasonPlaceholder: "ex : Congé annuel, raison familiale…",
+    leaveAttachmentLabel: "Justificatif — photo (optionnel)",
+    dateErrBoth: "Les deux dates sont requises.",
+    dateErrOrder: "La date de fin doit suivre la date de début.",
+    leaveErrSave: "Erreur d'enregistrement — réessayez.",
+    fileErrRead: "Erreur de lecture du fichier.",
+
+    absenceModalTitle: "Jours chômés sans explication",
+    absenceModalSubDefault: "Ces jours seront déduits du solde de congé restant.",
+    absenceForWho: (name) => `Pour ${name} — déduit du solde restant.`,
+    absenceStartLabel: "Du",
+    absenceEndLabel: "Au",
+    absenceErrSave: "Erreur d'enregistrement — réessayez.",
+
+    noConnectionText: "<b>Aucune connexion configurée.</b><br>Cliquez sur ⚙ en haut pour coller l'URL de votre Google Apps Script.",
+    loadingFromSheets: "Chargement depuis Google Sheets…",
+    loadErrorText: "Impossible de charger les données.<br>Vérifiez l'URL (⚙) et que le Web App est déployé avec l'accès « Tout le monde ».",
+    noEmployeesYet: "Aucun employé pour l'instant.<br>Ajoutez le premier pour commencer le suivi.",
+    noResultsFor: (term) => `Aucun résultat pour « ${term} ».`,
+    countLine: (filtered, total) => `${filtered} sur ${total} employé${total > 1 ? 's' : ''}`,
+    syncOk: "● Synchronisé",
+    syncErr: "● Non connecté",
+
+    hiredOn: (date) => `Embauché(e) le ${date}`,
+    statAcquired: "Acquis",
+    statRemaining: "Reste",
+    ladderText: (n) => `${n} jour${n > 1 ? 's' : ''} avant le prochain jour acquis`,
+    breakdownTaken: (n) => `jour${n > 1 ? 's' : ''} de congé pris`,
+    breakdownUnexcused: (n) => `jour${n > 1 ? 's' : ''} chômé${n > 1 ? 's' : ''} sans explication`,
+    btnAddLeave: "+ Congé pris",
+    btnAddAbsence: "+ Absence injustifiée",
+    btnEditEmployee: "Modifier",
+    btnRemoveEmployee: "Supprimer l'employé",
+    editModalTitle: "Modifier l'employé",
+    editModalSub: "Corrigez les informations de l'employé, y compris la date d'embauche si besoin.",
+    editErrSave: "Erreur d'enregistrement — réessayez.",
+    toastEmployeeUpdated: (name) => `${name} mis à jour.`,
+    historyLeaves: "Congés pris",
+    historyAbsences: "Absences injustifiées",
+    btnRemove: "Retirer",
+    noLeaveHist: "Aucun congé enregistré.",
+    noAbsenceHist: "Aucune absence injustifiée enregistrée.",
+    daysShort: (n) => `${n} j`,
+    attachmentLink: "📎 justificatif",
+
+    toastConfigureFirst: "Configurez la connexion (⚙) avant d'ajouter un employé.",
+    toastEmployeeAdded: (name) => `${name} ajouté(e).`,
+    toastEmployeeRemoved: "Employé supprimé.",
+    toastEmployeeRemoveErr: "Erreur : suppression impossible.",
+    toastLeaveAdded: (days) => `${days} jour${days > 1 ? 's' : ''} enregistré${days > 1 ? 's' : ''}.`,
+    toastLeaveRemoved: "Congé retiré.",
+    toastAbsenceAdded: (days) => `${days} jour${days > 1 ? 's' : ''} déduit${days > 1 ? 's' : ''} du solde.`,
+    toastAbsenceRemoved: "Absence retirée.",
+    toastRemoveErr: "Erreur lors du retrait.",
+    confirmDeleteEmployee: (name) => `Supprimer ${name} et tout son historique ?`,
+
+    dateLocale: "fr-FR",
+    sortLocale: "fr"
+  },
+  en: {
+    pageTitle: "Leave Tracker",
+    appTitle: "Leave Tracker",
+    ruleText: "1 day earned / 7 days worked",
+    searchPlaceholder: "Search for an employee…",
+    settingsBtnTitle: "Google Sheets connection",
+    addEmployeeBtn: "+ Employee",
+    initialLoading: "Loading…",
+
+    settingsModalTitle: "Google Sheets connection",
+    settingsModalSub: "Paste your Apps Script Web App URL (ends with <code>/exec</code>). It is saved only on this device/browser.",
+    settingsUrlLabel: "Web App URL",
+    settingsUrlPlaceholder: "https://script.google.com/macros/s/.../exec",
+    settingsErrInvalid: "The URL must start with https://script.google.com/ and end with /exec.",
+    btnClose: "Close",
+    btnSave: "Save",
+
+    addModalTitle: "New employee",
+    addModalSub: "The hire date is used as the starting point for calculating earned leave.",
+    newNameLabel: "Full name",
+    newNamePlaceholder: "e.g. Aïcha Moussa",
+    newRoleLabel: "Role",
+    newRolePlaceholder: "e.g. Driver, Electrician…",
+    newHireDateLabel: "Hire date",
+    addErrName: "Name is required.",
+    addErrHireRequired: "Hire date is required.",
+    addErrHireFuture: "Hire date cannot be in the future.",
+    addErrSave: "Save error — please try again.",
+    btnCancel: "Cancel",
+    btnAdd: "Add",
+
+    leaveModalTitle: "Record leave",
+    leaveForWho: (name) => `For ${name}`,
+    leaveStartLabel: "From",
+    leaveEndLabel: "To",
+    leaveReasonLabel: "Reason (optional)",
+    leaveReasonPlaceholder: "e.g. Annual leave, family reason…",
+    leaveAttachmentLabel: "Supporting document — photo (optional)",
+    dateErrBoth: "Both dates are required.",
+    dateErrOrder: "The end date must be after the start date.",
+    leaveErrSave: "Save error — please try again.",
+    fileErrRead: "Error reading the file.",
+
+    absenceModalTitle: "Unexplained absence",
+    absenceModalSubDefault: "These days will be deducted from the remaining leave balance.",
+    absenceForWho: (name) => `For ${name} — deducted from remaining balance.`,
+    absenceStartLabel: "From",
+    absenceEndLabel: "To",
+    absenceErrSave: "Save error — please try again.",
+
+    noConnectionText: "<b>No connection configured.</b><br>Click ⚙ above to paste your Google Apps Script URL.",
+    loadingFromSheets: "Loading from Google Sheets…",
+    loadErrorText: "Unable to load data.<br>Check the URL (⚙) and that the Web App is deployed with \"Anyone\" access.",
+    noEmployeesYet: "No employees yet.<br>Add the first one to start tracking.",
+    noResultsFor: (term) => `No results for "${term}".`,
+    countLine: (filtered, total) => `${filtered} of ${total} employee${total > 1 ? 's' : ''}`,
+    syncOk: "● Synced",
+    syncErr: "● Not connected",
+
+    hiredOn: (date) => `Hired on ${date}`,
+    statAcquired: "Earned",
+    statRemaining: "Left",
+    ladderText: (n) => `${n} day${n > 1 ? 's' : ''} until the next earned day`,
+    breakdownTaken: (n) => `day${n > 1 ? 's' : ''} of leave taken`,
+    breakdownUnexcused: (n) => `unexplained absence day${n > 1 ? 's' : ''}`,
+    btnAddLeave: "+ Leave taken",
+    btnAddAbsence: "+ Unexplained absence",
+    btnEditEmployee: "Edit",
+    btnRemoveEmployee: "Remove employee",
+    editModalTitle: "Edit employee",
+    editModalSub: "Fix the employee's details, including the hire date if needed.",
+    editErrSave: "Save error — please try again.",
+    toastEmployeeUpdated: (name) => `${name} updated.`,
+    historyLeaves: "Leave taken",
+    historyAbsences: "Unexplained absences",
+    btnRemove: "Remove",
+    noLeaveHist: "No leave recorded.",
+    noAbsenceHist: "No unexplained absences recorded.",
+    daysShort: (n) => `${n} d`,
+    attachmentLink: "📎 attachment",
+
+    toastConfigureFirst: "Set up the connection (⚙) before adding an employee.",
+    toastEmployeeAdded: (name) => `${name} added.`,
+    toastEmployeeRemoved: "Employee removed.",
+    toastEmployeeRemoveErr: "Error: could not remove.",
+    toastLeaveAdded: (days) => `${days} day${days > 1 ? 's' : ''} recorded.`,
+    toastLeaveRemoved: "Leave removed.",
+    toastAbsenceAdded: (days) => `${days} day${days > 1 ? 's' : ''} deducted from balance.`,
+    toastAbsenceRemoved: "Absence removed.",
+    toastRemoveErr: "Error while removing.",
+    confirmDeleteEmployee: (name) => `Remove ${name} and their entire history?`,
+
+    dateLocale: "en-GB",
+    sortLocale: "en"
+  }
+};
+
+let currentLang = localStorage.getItem('conges_lang') || 'fr';
+function t(key, ...args){
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.fr;
+  const val = dict[key];
+  if(typeof val === 'function') return val(...args);
+  return val !== undefined ? val : key;
+}
+
+function applyStaticTranslations(){
+  document.documentElement.lang = currentLang;
+  document.getElementById('pageTitle').textContent = t('pageTitle');
+  document.getElementById('appTitle').textContent = t('appTitle');
+  document.getElementById('ruleText').textContent = t('ruleText');
+  document.getElementById('searchInput').placeholder = t('searchPlaceholder');
+  document.getElementById('openSettings').title = t('settingsBtnTitle');
+  document.getElementById('openAddEmployee').textContent = t('addEmployeeBtn');
+  const initLoad = document.getElementById('initialLoading');
+  if(initLoad) initLoad.textContent = t('initialLoading');
+
+  document.getElementById('settingsModalTitle').textContent = t('settingsModalTitle');
+  document.getElementById('settingsModalSub').innerHTML = t('settingsModalSub');
+  document.getElementById('settingsUrlLabel').textContent = t('settingsUrlLabel');
+  document.getElementById('settingsUrl').placeholder = t('settingsUrlPlaceholder');
+  document.getElementById('cancelSettings').textContent = t('btnClose');
+  document.getElementById('confirmSettings').textContent = t('btnSave');
+
+  document.getElementById('addModalTitle').textContent = t('addModalTitle');
+  document.getElementById('addModalSub').textContent = t('addModalSub');
+  document.getElementById('newNameLabel').textContent = t('newNameLabel');
+  document.getElementById('newName').placeholder = t('newNamePlaceholder');
+  document.getElementById('newRoleLabel').textContent = t('newRoleLabel');
+  document.getElementById('newRole').placeholder = t('newRolePlaceholder');
+  document.getElementById('newHireDateLabel').textContent = t('newHireDateLabel');
+  document.getElementById('cancelAdd').textContent = t('btnCancel');
+  document.getElementById('confirmAdd').textContent = t('btnAdd');
+
+  document.getElementById('leaveModalTitle').textContent = t('leaveModalTitle');
+  document.getElementById('leaveStartLabel').textContent = t('leaveStartLabel');
+  document.getElementById('leaveEndLabel').textContent = t('leaveEndLabel');
+  document.getElementById('leaveReasonLabel').textContent = t('leaveReasonLabel');
+  document.getElementById('leaveReason').placeholder = t('leaveReasonPlaceholder');
+  document.getElementById('leaveAttachmentLabel').textContent = t('leaveAttachmentLabel');
+  document.getElementById('cancelLeave').textContent = t('btnCancel');
+  document.getElementById('confirmLeave').textContent = t('btnSave');
+
+  document.getElementById('absenceModalTitle').textContent = t('absenceModalTitle');
+  document.getElementById('absenceForWho').textContent = t('absenceModalSubDefault');
+  document.getElementById('absenceStartLabel').textContent = t('absenceStartLabel');
+  document.getElementById('absenceEndLabel').textContent = t('absenceEndLabel');
+  document.getElementById('cancelAbsence').textContent = t('btnCancel');
+  document.getElementById('confirmAbsence').textContent = t('btnSave');
+
+  document.getElementById('langFr').classList.toggle('active', currentLang === 'fr');
+  document.getElementById('langEn').classList.toggle('active', currentLang === 'en');
+}
+
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem('conges_lang', lang);
+  applyStaticTranslations();
+  render();
+}
+
+document.getElementById('langFr').addEventListener('click', ()=> setLang('fr'));
+document.getElementById('langEn').addEventListener('click', ()=> setLang('en'));
+// ==== END I18N ====
+
+let employees = [];
+let searchTerm = '';
+let openCardId = null;
+let actionTargetId = null;
+let editTargetId = null;
+
+const listContainer = document.getElementById('listContainer');
+const countText = document.getElementById('countText');
+const syncStatus = document.getElementById('syncStatus');
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2500);
+}
+
+function daysBetween(d1, d2){
+  return Math.floor((d2 - d1) / 86400000);
+}
+
+function newId(){ return 'e' + Date.now() + Math.floor(Math.random()*1000); }
+
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function computeStats(emp){
+  const hire = new Date(emp.hireDate + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const elapsed = Math.max(0, daysBetween(hire, today));
+  const acquired = Math.floor(elapsed / 7);
+  const taken = (emp.leaves || []).reduce((s,l)=> s + l.days, 0);
+  const unexcused = (emp.absences || []).reduce((s,l)=> s + l.days, 0);
+  const remaining = acquired - taken - unexcused;
+  const sinceLast = elapsed % 7;
+  const untilNext = elapsed === 0 ? 7 : (7 - sinceLast) % 7 || 7;
+  return { acquired, taken, unexcused, remaining, sinceLast, untilNext };
+}
+
+function fmtDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(t('dateLocale'), { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function initials(name){
+  return name.trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
+}
+
+async function apiGet(){
+  const url = API_URL + (API_URL.includes('?') ? '&' : '?') + '_=' + Date.now();
+  const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+  if(!res.ok) throw new Error('network');
+  return res.json();
+}
+
+async function apiPost(payload){
+  const fullPayload = Object.assign({ lang: currentLang }, payload);
+  let res;
+  try{
+    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(fullPayload) });
+  }catch(networkErr){
+    throw new Error(currentLang === 'fr' ? 'Connexion au serveur impossible.' : 'Could not reach the server.');
+  }
+  if(!res.ok) throw new Error(currentLang === 'fr' ? `Erreur serveur (${res.status}).` : `Server error (${res.status}).`);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'unknown');
+  return data;
+}
+
+function setSync(state){
+  if(state === 'ok'){ syncStatus.textContent = t('syncOk'); syncStatus.className = 'sync ok'; }
+  else if(state === 'err'){ syncStatus.textContent = t('syncErr'); syncStatus.className = 'sync err'; }
+  else { syncStatus.textContent = ''; syncStatus.className = 'sync'; }
+}
+
+async function loadEmployees(){
+  if(!API_URL){
+    listContainer.innerHTML = `
+      <div class="empty-state">
+        <p>${t('noConnectionText')}</p>
+      </div>`;
+    countText.textContent = '';
+    setSync('');
+    return;
+  }
+  listContainer.innerHTML = `<div class="loading">${t('loadingFromSheets')}</div>`;
+  try{
+    const data = await apiGet();
+    employees = data.employees || [];
+    setSync('ok');
+    render();
+  }catch(e){
+    setSync('err');
+    listContainer.innerHTML = `
+      <div class="empty-state">
+        <p>${t('loadErrorText')}</p>
+      </div>`;
+  }
+}
+
+function render(){
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = employees
+    .filter(e => e.name.toLowerCase().includes(term))
+    .sort((a,b)=> a.name.localeCompare(b.name, t('sortLocale')));
+
+  countText.textContent = employees.length === 0
+    ? ''
+    : t('countLine', filtered.length, employees.length);
+
+  if(employees.length === 0){
+    listContainer.innerHTML = `
+      <div class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p>${t('noEmployeesYet')}</p>
+      </div>`;
+    return;
+  }
+
+  if(filtered.length === 0){
+    listContainer.innerHTML = `<div class="empty-state"><p>${t('noResultsFor', term)}</p></div>`;
+    return;
+  }
+
+  listContainer.innerHTML = filtered.map(emp => {
+    const s = computeStats(emp);
+    const isOpen = openCardId === emp.id;
+    const dots = Array.from({length:7}, (_,i) => i < s.sinceLast ? 'dot filled' : 'dot').map(c=>`<span class="${c}"></span>`).join('');
+
+    const leaveHtml = (emp.leaves && emp.leaves.length)
+      ? emp.leaves.slice().sort((a,b)=> b.start.localeCompare(a.start)).map(l => `
+          <div class="leave-item">
+            <span class="dates">${fmtDate(l.start)} → ${fmtDate(l.end)}<span class="days">${t('daysShort', l.days)}</span>
+              ${l.reason ? `<span class="meta">${escapeHtml(l.reason)}</span>` : ''}
+              ${l.attachmentUrl ? `<span class="meta"><a href="${l.attachmentUrl}" target="_blank" rel="noopener">${t('attachmentLink')}</a></span>` : ''}
+            </span>
+            <button class="btn-danger-text" data-remove-leave="${emp.id}|${l.id}">${t('btnRemove')}</button>
+          </div>`).join('')
+      : `<div class="empty-hist">${t('noLeaveHist')}</div>`;
+
+    const absenceHtml = (emp.absences && emp.absences.length)
+      ? emp.absences.slice().sort((a,b)=> b.start.localeCompare(a.start)).map(l => `
+          <div class="leave-item">
+            <span class="dates">${fmtDate(l.start)} → ${fmtDate(l.end)}<span class="days">${t('daysShort', l.days)}</span></span>
+            <button class="btn-danger-text" data-remove-absence="${emp.id}|${l.id}">${t('btnRemove')}</button>
+          </div>`).join('')
+      : `<div class="empty-hist">${t('noAbsenceHist')}</div>`;
+
+    return `
+    <div class="card ${isOpen?'open':''}" data-card="${emp.id}">
+      <div class="row-main" data-toggle="${emp.id}">
+        <div class="avatar">${initials(emp.name)}</div>
+        <div class="who">
+          <div class="name">${emp.name}</div>
+          ${emp.role ? `<div class="role">${emp.role}</div>` : ''}
+          <div class="hire">${t('hiredOn', fmtDate(emp.hireDate))}</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="num">${s.acquired}</div><div class="lbl">${t('statAcquired')}</div></div>
+          <div class="stat ${s.remaining<0?'neg':''}"><div class="num">${s.remaining}</div><div class="lbl">${t('statRemaining')}</div></div>
+        </div>
+        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="detail">
+        <div class="ladder">
+          <div class="dots">${dots}</div>
+          <div class="txt">${t('ladderText', s.untilNext)}</div>
+        </div>
+        <div class="breakdown">
+          <div class="bitem"><b>${s.taken}</b> ${t('breakdownTaken', s.taken)}</div>
+          <div class="bitem"><b>${s.unexcused}</b> ${t('breakdownUnexcused', s.unexcused)}</div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-primary" data-add-leave="${emp.id}">${t('btnAddLeave')}</button>
+          <button class="btn btn-ghost" data-add-absence="${emp.id}">${t('btnAddAbsence')}</button>
+          <button class="btn btn-ghost" data-edit-emp="${emp.id}">${t('btnEditEmployee')}</button>
+          <button class="btn btn-ghost" data-remove-emp="${emp.id}">${t('btnRemoveEmployee')}</button>
+        </div>
+        <div class="history-title">${t('historyLeaves')}</div>
+        ${leaveHtml}
+        <div class="history-title" style="margin-top:14px;">${t('historyAbsences')}</div>
+        ${absenceHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+listContainer.addEventListener('click', async (e)=>{
+  const toggle = e.target.closest('[data-toggle]');
+  if(toggle && !e.target.closest('button')){
+    const id = toggle.getAttribute('data-toggle');
+    openCardId = openCardId === id ? null : id;
+    render();
+    return;
+  }
+  const addLeaveBtn = e.target.closest('[data-add-leave]');
+  if(addLeaveBtn){
+    actionTargetId = addLeaveBtn.getAttribute('data-add-leave');
+    const emp = employees.find(x=>x.id===actionTargetId);
+    document.getElementById('leaveForWho').textContent = t('leaveForWho', emp.name);
+    document.getElementById('leaveStart').value = '';
+    document.getElementById('leaveEnd').value = '';
+    document.getElementById('leaveReason').value = '';
+    document.getElementById('leaveAttachment').value = '';
+    document.getElementById('leaveErr').textContent = '';
+    document.getElementById('overlayLeave').classList.add('show');
+    return;
+  }
+  const addAbsenceBtn = e.target.closest('[data-add-absence]');
+  if(addAbsenceBtn){
+    actionTargetId = addAbsenceBtn.getAttribute('data-add-absence');
+    const emp = employees.find(x=>x.id===actionTargetId);
+    document.getElementById('absenceForWho').textContent = t('absenceForWho', emp.name);
+    document.getElementById('absenceStart').value = '';
+    document.getElementById('absenceEnd').value = '';
+    document.getElementById('absenceErr').textContent = '';
+    document.getElementById('overlayAbsence').classList.add('show');
+    return;
+  }
+  const editEmpBtn = e.target.closest('[data-edit-emp]');
+  if(editEmpBtn){
+    editTargetId = editEmpBtn.getAttribute('data-edit-emp');
+    const emp = employees.find(x=>x.id===editTargetId);
+    document.getElementById('addModalTitle').textContent = t('editModalTitle');
+    document.getElementById('addModalSub').textContent = t('editModalSub');
+    document.getElementById('confirmAdd').textContent = t('btnSave');
+    document.getElementById('newName').value = emp.name;
+    document.getElementById('newRole').value = emp.role || '';
+    document.getElementById('newHireDate').value = emp.hireDate;
+    document.getElementById('addErr').textContent = '';
+    overlayAdd.classList.add('show');
+    return;
+  }
+  const removeEmpBtn = e.target.closest('[data-remove-emp]');
+  if(removeEmpBtn){
+    const id = removeEmpBtn.getAttribute('data-remove-emp');
+    const emp = employees.find(x=>x.id===id);
+    if(confirm(t('confirmDeleteEmployee', emp.name))){
+      const backup = employees;
+      employees = employees.filter(x=>x.id!==id);
+      if(openCardId === id) openCardId = null;
+      render();
+      showToast(t('toastEmployeeRemoved'));
+      apiPost({ action: 'deleteEmployee', id }).catch((err)=>{
+        employees = backup;
+        render();
+        showToast(err.message || t('toastEmployeeRemoveErr'));
+      });
+    }
+    return;
+  }
+  const removeLeaveBtn = e.target.closest('[data-remove-leave]');
+  if(removeLeaveBtn){
+    const [empId, leaveId] = removeLeaveBtn.getAttribute('data-remove-leave').split('|');
+    const emp = employees.find(x=>x.id===empId);
+    const backup = emp.leaves;
+    emp.leaves = emp.leaves.filter(l=>l.id!==leaveId);
+    openCardId = empId;
+    render();
+    showToast(t('toastLeaveRemoved'));
+    apiPost({ action: 'deleteRecord', id: leaveId }).catch((err)=>{
+      emp.leaves = backup;
+      render();
+      showToast(err.message || t('toastRemoveErr'));
+    });
+    return;
+  }
+  const removeAbsenceBtn = e.target.closest('[data-remove-absence]');
+  if(removeAbsenceBtn){
+    const [empId, absId] = removeAbsenceBtn.getAttribute('data-remove-absence').split('|');
+    const emp = employees.find(x=>x.id===empId);
+    const backup = emp.absences;
+    emp.absences = emp.absences.filter(l=>l.id!==absId);
+    openCardId = empId;
+    render();
+    showToast(t('toastAbsenceRemoved'));
+    apiPost({ action: 'deleteRecord', id: absId }).catch((err)=>{
+      emp.absences = backup;
+      render();
+      showToast(err.message || t('toastRemoveErr'));
+    });
+    return;
+  }
+});
+
+document.getElementById('searchInput').addEventListener('input', (e)=>{
+  searchTerm = e.target.value;
+  render();
+});
+
+// Settings modal
+const overlaySettings = document.getElementById('overlaySettings');
+document.getElementById('openSettings').addEventListener('click', ()=>{
+  document.getElementById('settingsUrl').value = API_URL;
+  document.getElementById('settingsErr').textContent = '';
+  overlaySettings.classList.add('show');
+});
+document.getElementById('cancelSettings').addEventListener('click', ()=> overlaySettings.classList.remove('show'));
+overlaySettings.addEventListener('click', (e)=>{ if(e.target === overlaySettings) overlaySettings.classList.remove('show'); });
+document.getElementById('confirmSettings').addEventListener('click', ()=>{
+  const url = document.getElementById('settingsUrl').value.trim();
+  if(!url.startsWith('https://script.google.com/')){
+    document.getElementById('settingsErr').textContent = t('settingsErrInvalid');
+    return;
+  }
+  API_URL = url;
+  localStorage.setItem('conges_api_url', url);
+  overlaySettings.classList.remove('show');
+  loadEmployees();
+});
+
+// Add employee modal
+const overlayAdd = document.getElementById('overlayAdd');
+document.getElementById('openAddEmployee').addEventListener('click', ()=>{
+  if(!API_URL){ showToast(t('toastConfigureFirst')); return; }
+  editTargetId = null;
+  document.getElementById('addModalTitle').textContent = t('addModalTitle');
+  document.getElementById('addModalSub').textContent = t('addModalSub');
+  document.getElementById('confirmAdd').textContent = t('btnAdd');
+  document.getElementById('newName').value = '';
+  document.getElementById('newRole').value = '';
+  document.getElementById('newHireDate').value = '';
+  document.getElementById('addErr').textContent = '';
+  overlayAdd.classList.add('show');
+});
+document.getElementById('cancelAdd').addEventListener('click', ()=>{ editTargetId = null; overlayAdd.classList.remove('show'); });
+overlayAdd.addEventListener('click', (e)=>{ if(e.target === overlayAdd){ editTargetId = null; overlayAdd.classList.remove('show'); } });
+
+document.getElementById('confirmAdd').addEventListener('click', async ()=>{
+  const name = document.getElementById('newName').value.trim();
+  const role = document.getElementById('newRole').value.trim();
+  const hireDate = document.getElementById('newHireDate').value;
+  const errEl = document.getElementById('addErr');
+  if(!name){ errEl.textContent = t('addErrName'); return; }
+  if(!hireDate){ errEl.textContent = t('addErrHireRequired'); return; }
+  if(new Date(hireDate) > new Date()){ errEl.textContent = t('addErrHireFuture'); return; }
+
+  if(editTargetId){
+    const id = editTargetId;
+    const emp = employees.find(x=>x.id===id);
+    const backup = { name: emp.name, role: emp.role, hireDate: emp.hireDate };
+    emp.name = name; emp.role = role; emp.hireDate = hireDate;
+    overlayAdd.classList.remove('show');
+    showToast(t('toastEmployeeUpdated', name));
+    render();
+    apiPost({ action: 'updateEmployee', id, name, role, hireDate }).catch((err)=>{
+      Object.assign(emp, backup);
+      render();
+      showToast(err.message || t('editErrSave'));
+    });
+    return;
+  }
+
+  const id = newId();
+  employees.push({ id, name, role, hireDate, leaves: [], absences: [] });
+  overlayAdd.classList.remove('show');
+  showToast(t('toastEmployeeAdded', name));
+  render();
+  apiPost({ action: 'addEmployee', id, name, role, hireDate }).catch((err)=>{
+    employees = employees.filter(x=>x.id!==id);
+    render();
+    showToast(err.message || t('addErrSave'));
+  });
+});
+
+// Leave modal
+const overlayLeave = document.getElementById('overlayLeave');
+document.getElementById('cancelLeave').addEventListener('click', ()=> overlayLeave.classList.remove('show'));
+overlayLeave.addEventListener('click', (e)=>{ if(e.target === overlayLeave) overlayLeave.classList.remove('show'); });
+
+document.getElementById('confirmLeave').addEventListener('click', async ()=>{
+  const start = document.getElementById('leaveStart').value;
+  const end = document.getElementById('leaveEnd').value;
+  const reason = document.getElementById('leaveReason').value.trim();
+  const fileInput = document.getElementById('leaveAttachment');
+  const file = fileInput.files[0];
+  const errEl = document.getElementById('leaveErr');
+  if(!start || !end){ errEl.textContent = t('dateErrBoth'); return; }
+  const d1 = new Date(start), d2 = new Date(end);
+  if(d2 < d1){ errEl.textContent = t('dateErrOrder'); return; }
+  const days = daysBetween(d1, d2) + 1;
+
+  let imageBase64 = '', imageMimeType = '', imageName = '';
+  if(file){
+    try{
+      imageBase64 = await fileToBase64(file);
+      imageMimeType = file.type;
+      imageName = file.name;
+    }catch(err){
+      errEl.textContent = t('fileErrRead');
+      return;
+    }
+  }
+
+  const id = newId();
+  const emp = employees.find(x=>x.id===actionTargetId);
+  emp.leaves = emp.leaves || [];
+  emp.leaves.push({ id, start, end, days, reason, attachmentUrl: '' });
+  overlayLeave.classList.remove('show');
+  showToast(t('toastLeaveAdded', days));
+  openCardId = actionTargetId;
+  render();
+  apiPost({ action: 'addRecord', id, employeeId: actionTargetId, type: 'leave', start, end, days, reason, imageBase64, imageMimeType, imageName })
+    .then((res)=>{
+      const rec = emp.leaves.find(l=>l.id===id);
+      if(rec && res.attachmentUrl){ rec.attachmentUrl = res.attachmentUrl; render(); }
+      if(imageBase64 && res.attachmentError){
+        alert((currentLang==='fr' ? 'Photo non envoyée : ' : 'Photo not uploaded: ') + res.attachmentError);
+      }
+    })
+    .catch((err)=>{
+      emp.leaves = emp.leaves.filter(l=>l.id!==id);
+      render();
+      showToast(err.message || t('leaveErrSave'));
+    });
+});
+
+// Absence modal
+const overlayAbsence = document.getElementById('overlayAbsence');
+document.getElementById('cancelAbsence').addEventListener('click', ()=> overlayAbsence.classList.remove('show'));
+overlayAbsence.addEventListener('click', (e)=>{ if(e.target === overlayAbsence) overlayAbsence.classList.remove('show'); });
+
+document.getElementById('confirmAbsence').addEventListener('click', async ()=>{
+  const start = document.getElementById('absenceStart').value;
+  const end = document.getElementById('absenceEnd').value;
+  const errEl = document.getElementById('absenceErr');
+  if(!start || !end){ errEl.textContent = t('dateErrBoth'); return; }
+  const d1 = new Date(start), d2 = new Date(end);
+  if(d2 < d1){ errEl.textContent = t('dateErrOrder'); return; }
+  const days = daysBetween(d1, d2) + 1;
+  const id = newId();
+  const emp = employees.find(x=>x.id===actionTargetId);
+  emp.absences = emp.absences || [];
+  emp.absences.push({ id, start, end, days });
+  overlayAbsence.classList.remove('show');
+  showToast(t('toastAbsenceAdded', days));
+  openCardId = actionTargetId;
+  render();
+  apiPost({ action: 'addRecord', id, employeeId: actionTargetId, type: 'absence', start, end, days }).catch((err)=>{
+    emp.absences = emp.absences.filter(l=>l.id!==id);
+    render();
+    showToast(err.message || t('absenceErrSave'));
+  });
+});
+
+applyStaticTranslations();
+loadEmployees();
+</script>
+
+</body>
+</html>
