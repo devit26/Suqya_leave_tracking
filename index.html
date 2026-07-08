@@ -657,20 +657,19 @@ function computeStats(emp){
   const hire = new Date(emp.hireDate + 'T00:00:00');
   const today = new Date();
   today.setHours(0,0,0,0);
-  const elapsed = Math.max(0, daysBetween(hire, today));
+  const resetDate = new Date('2026-07-08T00:00:00'); // les jours avant cette date ne comptent plus
+  const effectiveStart = hire > resetDate ? hire : resetDate;
 
-  // La fenêtre de jours réellement comptabilisée dans "elapsed" va de la date
-  // d'embauche jusqu'à hier inclus (aujourd'hui n'est pas encore un jour complet).
+  const elapsed = Math.max(0, daysBetween(effectiveStart, today));
+
   const windowEnd = new Date(today);
   windowEnd.setDate(windowEnd.getDate() - 1);
 
-  // Jours "en pause" : ceux couverts par un congé (leave), dans la limite de
-  // la fenêtre [hire, windowEnd]. Ces jours ne comptent pas comme jours travaillés.
   let pausedDays = 0;
   (emp.leaves || []).forEach(l => {
     const lStart = new Date(l.start + 'T00:00:00');
     const lEnd = new Date(l.end + 'T00:00:00');
-    const clippedStart = lStart < hire ? hire : lStart;
+    const clippedStart = lStart < effectiveStart ? effectiveStart : lStart;
     const clippedEnd = lEnd > windowEnd ? windowEnd : lEnd;
     if (clippedEnd >= clippedStart) {
       pausedDays += daysBetween(clippedStart, clippedEnd) + 1;
