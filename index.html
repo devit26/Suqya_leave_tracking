@@ -355,7 +355,7 @@
 
 <script>
 // ==== CONFIGURATION ====
-const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbww7iKBukJahXJJw_wYpzbNA1mBARX8XAj9pu24vFXEVj_oZkaK_3HDlLkKu8jOemIN1Q/exec";
+const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbyWilW5lBFqTvxCbUDGWNW27WA9gOxYsXPx2uaqzuxcWJS7zv5z1wmgOQKpiXxxmvVN0Q/exec";
 // ========================
 
 let API_URL = CONFIG_API_URL || localStorage.getItem('conges_api_url') || '';
@@ -658,12 +658,33 @@ function computeStats(emp){
   const today = new Date();
   today.setHours(0,0,0,0);
   const elapsed = Math.max(0, daysBetween(hire, today));
-  const acquired = Math.floor(elapsed / 7);
+
+  // La fenêtre de jours réellement comptabilisée dans "elapsed" va de la date
+  // d'embauche jusqu'à hier inclus (aujourd'hui n'est pas encore un jour complet).
+  const windowEnd = new Date(today);
+  windowEnd.setDate(windowEnd.getDate() - 1);
+
+  // Jours "en pause" : ceux couverts par un congé (leave), dans la limite de
+  // la fenêtre [hire, windowEnd]. Ces jours ne comptent pas comme jours travaillés.
+  let pausedDays = 0;
+  (emp.leaves || []).forEach(l => {
+    const lStart = new Date(l.start + 'T00:00:00');
+    const lEnd = new Date(l.end + 'T00:00:00');
+    const clippedStart = lStart < hire ? hire : lStart;
+    const clippedEnd = lEnd > windowEnd ? windowEnd : lEnd;
+    if (clippedEnd >= clippedStart) {
+      pausedDays += daysBetween(clippedStart, clippedEnd) + 1;
+    }
+  });
+
+  const workedDays = Math.max(0, elapsed - pausedDays);
+
+  const acquired = Math.floor(workedDays / 7);
   const taken = (emp.leaves || []).reduce((s,l)=> s + l.days, 0);
   const unexcused = (emp.absences || []).reduce((s,l)=> s + l.days, 0);
   const remaining = acquired - taken - unexcused;
-  const sinceLast = elapsed % 7;
-  const untilNext = elapsed === 0 ? 7 : (7 - sinceLast) % 7 || 7;
+  const sinceLast = workedDays % 7;
+  const untilNext = workedDays === 0 ? 7 : (7 - sinceLast) % 7 || 7;
   return { acquired, taken, unexcused, remaining, sinceLast, untilNext };
 }
 
