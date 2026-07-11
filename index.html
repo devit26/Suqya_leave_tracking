@@ -171,6 +171,12 @@
   .leave-item .meta a:hover{ text-decoration:underline; }
   .empty-hist{ font-size: 13px; color: var(--ink-soft); padding: 6px 0; }
 
+  .friday-list{ display:flex; flex-wrap:wrap; gap: 8px 16px; }
+  .friday-item{ display:flex; align-items:center; gap:6px; font-size:13px; color: var(--ink); cursor:pointer; }
+  .friday-item input{ cursor:pointer; }
+  .friday-item-disabled{ color: var(--ink-soft); cursor:default; }
+  .friday-item-disabled input{ cursor:default; }
+
   .empty-state{
     text-align:center; padding: 60px 20px; color: var(--ink-soft);
   }
@@ -355,7 +361,7 @@
 
 <script>
 // ==== CONFIGURATION ====
-const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbyWilW5lBFqTvxCbUDGWNW27WA9gOxYsXPx2uaqzuxcWJS7zv5z1wmgOQKpiXxxmvVN0Q/exec";
+const CONFIG_API_URL = "https://script.google.com/macros/s/AKfycbx5VaLWRylyqIxUHrVFTy-C2fl5knibvG9TCopcoKmXScSQHZMLaqc6wyIw5u9s_F6Xyg/exec";
 // ========================
 
 let API_URL = CONFIG_API_URL || localStorage.getItem('conges_api_url') || '';
@@ -402,6 +408,7 @@ const TRANSLATIONS = {
     leaveAttachmentLabel: "Justificatif — photo (optionnel)",
     dateErrBoth: "Les deux dates sont requises.",
     dateErrOrder: "La date de fin doit suivre la date de début.",
+    leaveErrExceedsBalance: (days, remaining) => `Impossible d'enregistrer ce congé : le nombre de jours demandés (${days}) est supérieur au nombre de jours acquis (${remaining}).`,
     leaveErrSave: "Erreur d'enregistrement — réessayez.",
     fileErrRead: "Erreur de lecture du fichier.",
 
@@ -437,6 +444,9 @@ const TRANSLATIONS = {
     toastEmployeeUpdated: (name) => `${name} mis à jour.`,
     historyLeaves: "Congés pris",
     historyAbsences: "Absences injustifiées",
+    historyFridays: "Vendredis travaillés",
+    noFridays: "Aucun vendredi depuis l'embauche.",
+    fridayWithinLeave: "Ce vendredi est déjà couvert par un congé.",
     btnRemove: "Retirer",
     noLeaveHist: "Aucun congé enregistré.",
     noAbsenceHist: "Aucune absence injustifiée enregistrée.",
@@ -497,6 +507,7 @@ const TRANSLATIONS = {
     leaveAttachmentLabel: "Supporting document — photo (optional)",
     dateErrBoth: "Both dates are required.",
     dateErrOrder: "The end date must be after the start date.",
+    leaveErrExceedsBalance: (days, remaining) => `Cannot save this leave: the number of days requested (${days}) exceeds the number of days earned (${remaining}).`,
     leaveErrSave: "Save error — please try again.",
     fileErrRead: "Error reading the file.",
 
@@ -532,6 +543,9 @@ const TRANSLATIONS = {
     toastEmployeeUpdated: (name) => `${name} updated.`,
     historyLeaves: "Leave taken",
     historyAbsences: "Unexplained absences",
+    historyFridays: "Fridays worked",
+    noFridays: "No Fridays since hire date.",
+    fridayWithinLeave: "This Friday is already covered by a leave.",
     btnRemove: "Remove",
     noLeaveHist: "No leave recorded.",
     noAbsenceHist: "No unexplained absences recorded.",
@@ -653,38 +667,117 @@ function fileToBase64(file){
   });
 }
 
-function computeStats(emp){
+// Indique si une date donnée tombe dans une période de congé de l'employé
+// (utilisé pour ne pas compter deux fois un vendredi déjà exclu par un congé).
+function isWithinAnyLeave_(emp, d){
+  return (emp.leaves || []).some(l => {
+    const lStart = new Date(l.start + 'T00:00:00');
+    const lEnd = new Date(l.end + 'T00:00:00');
+    return d >= lStart && d <= lEnd;
+  });
+}
+
+// Date de bascule du système : le calcul des 7 jours travaillés / jour acquis
+// démarre à partir de cette date pour tous les employés déjà présents avant
+// cette date (et non depuis leur date d'embauche réelle, qui peut être très
+// ancienne). Pour un employé embauché APRÈS cette date, le calcul démarre
+// normalement à sa date d'embauche.
+const LEAVE_CALC_START_DATE = '2026-07-09';
+
+function countingStartDate_(emp){
   const hire = new Date(emp.hireDate + 'T00:00:00');
+  const cutover = new Date(LEAVE_CALC_START_DATE + 'T00:00:00');
+  return hire > cutover ? hire : cutover;
+}
+
+function computeStats(emp){
+  const start = countingStartDate_(emp);
   const today = new Date();
   today.setHours(0,0,0,0);
-  const resetDate = new Date('2026-07-08T00:00:00'); // les jours avant cette date ne comptent plus
-  const effectiveStart = hire > resetDate ? hire : resetDate;
+  const elapsed = Math.max(0, daysBetween(start, today));
 
-  const elapsed = Math.max(0, daysBetween(effectiveStart, today));
-
+  // La fenêtre de jours réellement comptabilisée dans "elapsed" va du point de
+  // départ du calcul jusqu'à hier inclus (aujourd'hui n'est pas encore un jour complet).
   const windowEnd = new Date(today);
   windowEnd.setDate(windowEnd.getDate() - 1);
 
+  // Jours "en pause" : ceux couverts par un congé (leave), dans la limite de
+  // la fenêtre [start, windowEnd]. Ces jours ne comptent pas comme jours travaillés.
   let pausedDays = 0;
   (emp.leaves || []).forEach(l => {
     const lStart = new Date(l.start + 'T00:00:00');
     const lEnd = new Date(l.end + 'T00:00:00');
-    const clippedStart = lStart < effectiveStart ? effectiveStart : lStart;
+    const clippedStart = lStart < start ? start : lStart;
     const clippedEnd = lEnd > windowEnd ? windowEnd : lEnd;
     if (clippedEnd >= clippedStart) {
       pausedDays += daysBetween(clippedStart, clippedEnd) + 1;
     }
   });
 
-  const workedDays = Math.max(0, elapsed - pausedDays);
+  // Vendredis : décochés par défaut (donc EXCLUS du calcul des 7 jours),
+  // sauf ceux explicitement marqués "travaillé" (fridayOn) par l'utilisateur.
+  // Les vendredis déjà couverts par un congé ne sont pas comptés ici pour
+  // éviter un double décompte (déjà inclus dans pausedDays).
+  const fridayOnDates = (emp.fridayOn || []).map(f => f.date);
+  let fridayExcludedDays = 0;
+  {
+    const d = new Date(start);
+    while (d.getDay() !== 5 && d <= windowEnd) { d.setDate(d.getDate() + 1); }
+    while (d <= windowEnd) {
+      if (!isWithinAnyLeave_(emp, d)) {
+        const iso = Utilities_formatDate_(d);
+        if (fridayOnDates.indexOf(iso) === -1) {
+          fridayExcludedDays += 1;
+        }
+      }
+      d.setDate(d.getDate() + 7);
+    }
+  }
 
-  const acquired = Math.floor(workedDays / 7);
+  const workedDays = Math.max(0, elapsed - pausedDays - fridayExcludedDays);
+
+  const baseAcquired = Math.floor(workedDays / 7);
+  const regularization = (emp.regularization === '' || emp.regularization === undefined) ? 0 : Number(emp.regularization);
+  const acquired = baseAcquired + regularization;
   const taken = (emp.leaves || []).reduce((s,l)=> s + l.days, 0);
   const unexcused = (emp.absences || []).reduce((s,l)=> s + l.days, 0);
   const remaining = acquired - taken - unexcused;
   const sinceLast = workedDays % 7;
   const untilNext = workedDays === 0 ? 7 : (7 - sinceLast) % 7 || 7;
-  return { acquired, taken, unexcused, remaining, sinceLast, untilNext };
+  return { acquired, baseAcquired, regularization, taken, unexcused, remaining, sinceLast, untilNext };
+}
+
+// Calcule le déficit historique (jours pris en congé au-delà des jours
+// acquis sans régularisation) — sert uniquement à la régularisation ponctuelle.
+function computeRegularizationDeficit(emp){
+  const empWithoutReg = Object.assign({}, emp, { regularization: 0 });
+  const stats = computeStats(empWithoutReg);
+  return Math.max(0, stats.taken + stats.unexcused - stats.baseAcquired);
+}
+
+// Liste tous les vendredis entre le point de départ du calcul (date de
+// bascule ou date d'embauche si plus récente) et aujourd'hui (inclus),
+// du plus récent au plus ancien.
+function listFridaysSinceHire(emp){
+  const start = countingStartDate_(emp);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const fridays = [];
+  const d = new Date(start);
+  // avance jusqu'au premier vendredi
+  while(d.getDay() !== 5 && d <= today){ d.setDate(d.getDate()+1); }
+  while(d <= today){
+    fridays.push(Utilities_formatDate_(d));
+    d.setDate(d.getDate()+7);
+  }
+  return fridays.reverse();
+}
+
+function Utilities_formatDate_(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
 }
 
 function fmtDate(iso){
@@ -739,12 +832,38 @@ async function loadEmployees(){
     employees = data.employees || [];
     setSync('ok');
     render();
+    // La régularisation s'exécute en arrière-plan : elle ne doit jamais
+    // bloquer l'affichage de la liste, même si elle prend du temps
+    // (plusieurs employés à régulariser lors du tout premier chargement).
+    applyAutoRegularization().catch(()=>{ /* déjà géré employé par employé */ });
   }catch(e){
     setSync('err');
     listContainer.innerHTML = `
       <div class="empty-state">
         <p>${t('loadErrorText')}</p>
       </div>`;
+  }
+}
+
+// Régularisation automatique des anciens congés : pour tout employé dont le
+// solde de régularisation n'a pas encore été calculé (regularization === ''),
+// on lui attribue un nombre de jours acquis égal à son déficit historique
+// (congés déjà pris au-delà des jours acquis), de sorte que son solde
+// restant ne soit jamais négatif à cause de congés passés. Ceci ne s'exécute
+// qu'une seule fois par employé (le résultat est ensuite persistant).
+async function applyAutoRegularization(){
+  for(const emp of employees){
+    if(emp.regularization === '' || emp.regularization === undefined || emp.regularization === null){
+      const deficit = computeRegularizationDeficit(emp);
+      emp.regularization = deficit;
+      render();
+      try{
+        await apiPost({ action: 'setRegularization', id: emp.id, regularization: deficit });
+      }catch(err){
+        // Si l'enregistrement échoue, on retentera au prochain chargement
+        // (regularization restera '' côté serveur).
+      }
+    }
   }
 }
 
@@ -796,6 +915,27 @@ function render(){
           </div>`).join('')
       : `<div class="empty-hist">${t('noAbsenceHist')}</div>`;
 
+    const fridayOnDates = (emp.fridayOn || []).map(f => f.date);
+    const allFridays = listFridaysSinceHire(emp).slice(0, 8);
+    const fridayHtml = allFridays.length
+      ? allFridays.map(dateIso => {
+          const withinLeave = isWithinAnyLeave_(emp, new Date(dateIso + 'T00:00:00'));
+          const isOn = fridayOnDates.indexOf(dateIso) !== -1;
+          if(withinLeave){
+            return `
+          <label class="friday-item friday-item-disabled" title="${t('fridayWithinLeave')}">
+            <input type="checkbox" checked disabled>
+            <span>${fmtDate(dateIso)}</span>
+          </label>`;
+          }
+          return `
+          <label class="friday-item">
+            <input type="checkbox" data-friday-toggle="${emp.id}|${dateIso}" ${isOn ? 'checked' : ''}>
+            <span>${fmtDate(dateIso)}</span>
+          </label>`;
+        }).join('')
+      : `<div class="empty-hist">${t('noFridays')}</div>`;
+
     return `
     <div class="card ${isOpen?'open':''}" data-card="${emp.id}">
       <div class="row-main" data-toggle="${emp.id}">
@@ -830,6 +970,8 @@ function render(){
         ${leaveHtml}
         <div class="history-title" style="margin-top:14px;">${t('historyAbsences')}</div>
         ${absenceHtml}
+        <div class="history-title" style="margin-top:14px;">${t('historyFridays')}</div>
+        <div class="friday-list">${fridayHtml}</div>
       </div>
     </div>`;
   }).join('');
@@ -937,6 +1079,41 @@ listContainer.addEventListener('click', async (e)=>{
     });
     return;
   }
+  const fridayToggle = e.target.closest('[data-friday-toggle]');
+  if(fridayToggle){
+    const [empId, dateIso] = fridayToggle.getAttribute('data-friday-toggle').split('|');
+    const emp = employees.find(x=>x.id===empId);
+    emp.fridayOn = emp.fridayOn || [];
+    const checked = fridayToggle.checked; // checked = vendredi confirmé travaillé
+    openCardId = empId;
+    if(checked){
+      // Le vendredi est confirmé travaillé : on crée l'enregistrement "fridayOn".
+      const id = newId();
+      const backup = emp.fridayOn;
+      emp.fridayOn = emp.fridayOn.concat([{ id, date: dateIso }]);
+      render();
+      apiPost({ action: 'addRecord', id, employeeId: empId, type: 'fridayOn', start: dateIso, end: dateIso, days: 0 })
+        .catch((err)=>{
+          emp.fridayOn = backup;
+          render();
+          showToast(err.message || t('toastRemoveErr'));
+        });
+    } else {
+      // Le vendredi redevient non travaillé (par défaut) : on retire l'enregistrement.
+      const existing = emp.fridayOn.find(f => f.date === dateIso);
+      if(existing){
+        const backup = emp.fridayOn;
+        emp.fridayOn = emp.fridayOn.filter(f => f.date !== dateIso);
+        render();
+        apiPost({ action: 'deleteRecord', id: existing.id }).catch((err)=>{
+          emp.fridayOn = backup;
+          render();
+          showToast(err.message || t('toastRemoveErr'));
+        });
+      }
+    }
+    return;
+  }
 });
 
 document.getElementById('searchInput').addEventListener('input', (e)=>{
@@ -1036,6 +1213,13 @@ document.getElementById('confirmLeave').addEventListener('click', async ()=>{
   if(d2 < d1){ errEl.textContent = t('dateErrOrder'); return; }
   const days = daysBetween(d1, d2) + 1;
 
+  const emp = employees.find(x=>x.id===actionTargetId);
+  const statsBefore = computeStats(emp);
+  if(days > statsBefore.remaining){
+    errEl.textContent = t('leaveErrExceedsBalance', days, statsBefore.remaining);
+    return;
+  }
+
   let imageBase64 = '', imageMimeType = '', imageName = '';
   if(file){
     try{
@@ -1049,7 +1233,6 @@ document.getElementById('confirmLeave').addEventListener('click', async ()=>{
   }
 
   const id = newId();
-  const emp = employees.find(x=>x.id===actionTargetId);
   emp.leaves = emp.leaves || [];
   emp.leaves.push({ id, start, end, days, reason, attachmentUrl: '' });
   overlayLeave.classList.remove('show');
