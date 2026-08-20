@@ -357,6 +357,35 @@
   </div>
 </div>
 
+<!-- Modal: Ajustement manuel -->
+<div class="overlay" id="overlayAdjustment">
+  <div class="modal">
+    <h2 id="adjustmentModalTitle">Ajustement manuel</h2>
+    <p class="sub" id="adjustmentForWho"></p>
+    <div class="field">
+      <label for="adjustmentDate" id="adjustmentDateLabel">Date</label>
+      <input type="date" id="adjustmentDate">
+    </div>
+    <div class="field">
+      <label for="adjustmentDays" id="adjustmentDaysLabel">Nombre de jours (+ ajout, - retrait)</label>
+      <input type="number" id="adjustmentDays" step="1" placeholder="ex : 1 ou -1">
+    </div>
+    <div class="field">
+      <label for="adjustmentReason" id="adjustmentReasonLabel">Motif</label>
+      <input type="text" id="adjustmentReason" placeholder="ex : récupération exceptionnelle, correction administrative…">
+    </div>
+    <div class="field">
+      <label for="adjustmentAuthor" id="adjustmentAuthorLabel">Fait par</label>
+      <input type="text" id="adjustmentAuthor" placeholder="ex : Zoul">
+    </div>
+    <div class="err" id="adjustmentErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelAdjustment">Annuler</button>
+      <button class="btn btn-primary" id="confirmAdjustment">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -418,6 +447,29 @@ const TRANSLATIONS = {
     absenceStartLabel: "Du",
     absenceEndLabel: "Au",
     absenceErrSave: "Erreur d'enregistrement — réessayez.",
+
+    adjustmentModalTitle: "Ajustement manuel",
+    adjustmentForWho: (name) => `Pour ${name}`,
+    adjustmentDateLabel: "Date",
+    adjustmentDaysLabel: "Nombre de jours (+ ajout, - retrait)",
+    adjustmentDaysPlaceholder: "ex : 1 ou -1",
+    adjustmentReasonLabel: "Motif",
+    adjustmentReasonPlaceholder: "ex : récupération exceptionnelle, correction administrative…",
+    adjustmentAuthorLabel: "Fait par",
+    adjustmentAuthorPlaceholder: "ex : Zoul",
+    adjustmentErrDate: "La date est requise.",
+    adjustmentErrDays: "Le nombre de jours doit être différent de 0.",
+    adjustmentErrReason: "Le motif est requis.",
+    adjustmentErrAuthor: "Le nom de la personne est requis.",
+    adjustmentErrSave: "Erreur d'enregistrement — réessayez.",
+    btnAddAdjustment: "+ Ajustement manuel",
+    historyAdjustments: "Ajustements manuels",
+    noAdjustmentHist: "Aucun ajustement manuel enregistré.",
+    breakdownFridayBonus: (n) => `jour${n > 1 ? 's' : ''} récup. vendredi`,
+    breakdownAdjustments: (n) => `jour${Math.abs(n) > 1 ? 's' : ''} d'ajustement manuel`,
+    adjustmentMeta: (author) => `Par ${author}`,
+    toastAdjustmentAdded: (days) => `Ajustement de ${days > 0 ? '+' : ''}${days} jour${Math.abs(days) > 1 ? 's' : ''} enregistré.`,
+    toastAdjustmentRemoved: "Ajustement retiré.",
 
     noConnectionText: "<b>Aucune connexion configurée.</b><br>Cliquez sur ⚙ en haut pour coller l'URL de votre Google Apps Script.",
     loadingFromSheets: "Chargement depuis Google Sheets…",
@@ -517,6 +569,29 @@ const TRANSLATIONS = {
     absenceStartLabel: "From",
     absenceEndLabel: "To",
     absenceErrSave: "Save error — please try again.",
+
+    adjustmentModalTitle: "Manual adjustment",
+    adjustmentForWho: (name) => `For ${name}`,
+    adjustmentDateLabel: "Date",
+    adjustmentDaysLabel: "Number of days (+ add, - remove)",
+    adjustmentDaysPlaceholder: "e.g. 1 or -1",
+    adjustmentReasonLabel: "Reason",
+    adjustmentReasonPlaceholder: "e.g. exceptional recovery, administrative correction…",
+    adjustmentAuthorLabel: "Done by",
+    adjustmentAuthorPlaceholder: "e.g. Zoul",
+    adjustmentErrDate: "Date is required.",
+    adjustmentErrDays: "The number of days must not be 0.",
+    adjustmentErrReason: "Reason is required.",
+    adjustmentErrAuthor: "The name of the person is required.",
+    adjustmentErrSave: "Save error — please try again.",
+    btnAddAdjustment: "+ Manual adjustment",
+    historyAdjustments: "Manual adjustments",
+    noAdjustmentHist: "No manual adjustment recorded.",
+    breakdownFridayBonus: (n) => `Friday recovery day${n > 1 ? 's' : ''}`,
+    breakdownAdjustments: (n) => `manual adjustment day${Math.abs(n) > 1 ? 's' : ''}`,
+    adjustmentMeta: (author) => `By ${author}`,
+    toastAdjustmentAdded: (days) => `Adjustment of ${days > 0 ? '+' : ''}${days} day${Math.abs(days) > 1 ? 's' : ''} recorded.`,
+    toastAdjustmentRemoved: "Adjustment removed.",
 
     noConnectionText: "<b>No connection configured.</b><br>Click ⚙ above to paste your Google Apps Script URL.",
     loadingFromSheets: "Loading from Google Sheets…",
@@ -620,6 +695,17 @@ function applyStaticTranslations(){
   document.getElementById('cancelAbsence').textContent = t('btnCancel');
   document.getElementById('confirmAbsence').textContent = t('btnSave');
 
+  document.getElementById('adjustmentModalTitle').textContent = t('adjustmentModalTitle');
+  document.getElementById('adjustmentDateLabel').textContent = t('adjustmentDateLabel');
+  document.getElementById('adjustmentDaysLabel').textContent = t('adjustmentDaysLabel');
+  document.getElementById('adjustmentDays').placeholder = t('adjustmentDaysPlaceholder');
+  document.getElementById('adjustmentReasonLabel').textContent = t('adjustmentReasonLabel');
+  document.getElementById('adjustmentReason').placeholder = t('adjustmentReasonPlaceholder');
+  document.getElementById('adjustmentAuthorLabel').textContent = t('adjustmentAuthorLabel');
+  document.getElementById('adjustmentAuthor').placeholder = t('adjustmentAuthorPlaceholder');
+  document.getElementById('cancelAdjustment').textContent = t('btnCancel');
+  document.getElementById('confirmAdjustment').textContent = t('btnSave');
+
   document.getElementById('langFr').classList.toggle('active', currentLang === 'fr');
   document.getElementById('langEn').classList.toggle('active', currentLang === 'en');
 }
@@ -714,8 +800,11 @@ function computeStats(emp){
     }
   });
 
-  // Vendredis : décochés par défaut (donc EXCLUS du calcul des 7 jours),
-  // sauf ceux explicitement marqués "travaillé" (fridayOn) par l'utilisateur.
+  // Vendredis : le vendredi n'est pas un jour de travail normal, donc TOUS
+  // les vendredis (cochés "travaillé" ou non) sont exclus du calcul du ratio
+  // "6 jours travaillés = 1 jour acquis". Un vendredi coché "travaillé" ne
+  // rentre plus dans ce ratio : il donne à la place un jour de récupération
+  // immédiat et distinct, compté séparément ci-dessous (fridayBonus).
   // Les vendredis déjà couverts par un congé ne sont pas comptés ici pour
   // éviter un double décompte (déjà inclus dans pausedDays).
   const fridayOnDates = (emp.fridayOn || []).map(f => f.date);
@@ -725,10 +814,7 @@ function computeStats(emp){
     while (d.getDay() !== 5 && d <= windowEnd) { d.setDate(d.getDate() + 1); }
     while (d <= windowEnd) {
       if (!isWithinAnyLeave_(emp, d)) {
-        const iso = Utilities_formatDate_(d);
-        if (fridayOnDates.indexOf(iso) === -1) {
-          fridayExcludedDays += 1;
-        }
+        fridayExcludedDays += 1;
       }
       d.setDate(d.getDate() + 7);
     }
@@ -738,13 +824,17 @@ function computeStats(emp){
 
   const baseAcquired = Math.floor(workedDays / 7);
   const regularization = (emp.regularization === '' || emp.regularization === undefined) ? 0 : Number(emp.regularization);
-  const acquired = baseAcquired + regularization;
+  // Un jour de récupération immédiat par vendredi coché "travaillé".
+  const fridayBonus = fridayOnDates.length;
+  // Ajustements manuels (peuvent être positifs ou négatifs).
+  const adjustmentsSum = (emp.adjustments || []).reduce((s,a)=> s + (Number(a.days) || 0), 0);
+  const acquired = baseAcquired + regularization + fridayBonus + adjustmentsSum;
   const taken = (emp.leaves || []).reduce((s,l)=> s + l.days, 0);
   const unexcused = (emp.absences || []).reduce((s,l)=> s + l.days, 0);
   const remaining = acquired - taken - unexcused;
   const sinceLast = workedDays % 7;
   const untilNext = workedDays === 0 ? 7 : (7 - sinceLast) % 7 || 7;
-  return { acquired, baseAcquired, regularization, taken, unexcused, remaining, sinceLast, untilNext };
+  return { acquired, baseAcquired, regularization, fridayBonus, adjustmentsSum, taken, unexcused, remaining, sinceLast, untilNext };
 }
 
 // Calcule le déficit historique (jours pris en congé au-delà des jours
@@ -915,6 +1005,17 @@ function render(){
           </div>`).join('')
       : `<div class="empty-hist">${t('noAbsenceHist')}</div>`;
 
+    const adjustmentHtml = (emp.adjustments && emp.adjustments.length)
+      ? emp.adjustments.slice().sort((a,b)=> b.date.localeCompare(a.date)).map(a => `
+          <div class="leave-item">
+            <span class="dates">${fmtDate(a.date)}<span class="days">${a.days > 0 ? '+' : ''}${a.days} ${t('daysShort', Math.abs(a.days))}</span>
+              <span class="meta">${escapeHtml(a.reason)}</span>
+              ${a.author ? `<span class="meta">${t('adjustmentMeta', escapeHtml(a.author))}</span>` : ''}
+            </span>
+            <button class="btn-danger-text" data-remove-adjustment="${emp.id}|${a.id}">${t('btnRemove')}</button>
+          </div>`).join('')
+      : `<div class="empty-hist">${t('noAdjustmentHist')}</div>`;
+
     const fridayOnDates = (emp.fridayOn || []).map(f => f.date);
     const allFridays = listFridaysSinceHire(emp).slice(0, 8);
     const fridayHtml = allFridays.length
@@ -959,10 +1060,13 @@ function render(){
         <div class="breakdown">
           <div class="bitem"><b>${s.taken}</b> ${t('breakdownTaken', s.taken)}</div>
           <div class="bitem"><b>${s.unexcused}</b> ${t('breakdownUnexcused', s.unexcused)}</div>
+          ${s.fridayBonus > 0 ? `<div class="bitem"><b>+${s.fridayBonus}</b> ${t('breakdownFridayBonus', s.fridayBonus)}</div>` : ''}
+          ${s.adjustmentsSum !== 0 ? `<div class="bitem"><b>${s.adjustmentsSum > 0 ? '+' : ''}${s.adjustmentsSum}</b> ${t('breakdownAdjustments', s.adjustmentsSum)}</div>` : ''}
         </div>
         <div class="detail-actions">
           <button class="btn btn-primary" data-add-leave="${emp.id}">${t('btnAddLeave')}</button>
           <button class="btn btn-ghost" data-add-absence="${emp.id}">${t('btnAddAbsence')}</button>
+          <button class="btn btn-ghost" data-add-adjustment="${emp.id}">${t('btnAddAdjustment')}</button>
           <button class="btn btn-ghost" data-edit-emp="${emp.id}">${t('btnEditEmployee')}</button>
           <button class="btn btn-ghost" data-remove-emp="${emp.id}">${t('btnRemoveEmployee')}</button>
         </div>
@@ -972,6 +1076,8 @@ function render(){
         ${absenceHtml}
         <div class="history-title" style="margin-top:14px;">${t('historyFridays')}</div>
         <div class="friday-list">${fridayHtml}</div>
+        <div class="history-title" style="margin-top:14px;">${t('historyAdjustments')}</div>
+        ${adjustmentHtml}
       </div>
     </div>`;
   }).join('');
@@ -1013,6 +1119,19 @@ listContainer.addEventListener('click', async (e)=>{
     document.getElementById('absenceEnd').value = '';
     document.getElementById('absenceErr').textContent = '';
     document.getElementById('overlayAbsence').classList.add('show');
+    return;
+  }
+  const addAdjustmentBtn = e.target.closest('[data-add-adjustment]');
+  if(addAdjustmentBtn){
+    actionTargetId = addAdjustmentBtn.getAttribute('data-add-adjustment');
+    const emp = employees.find(x=>x.id===actionTargetId);
+    document.getElementById('adjustmentForWho').textContent = t('adjustmentForWho', emp.name);
+    document.getElementById('adjustmentDate').value = '';
+    document.getElementById('adjustmentDays').value = '';
+    document.getElementById('adjustmentReason').value = '';
+    document.getElementById('adjustmentAuthor').value = '';
+    document.getElementById('adjustmentErr').textContent = '';
+    document.getElementById('overlayAdjustment').classList.add('show');
     return;
   }
   const editEmpBtn = e.target.closest('[data-edit-emp]');
@@ -1074,6 +1193,22 @@ listContainer.addEventListener('click', async (e)=>{
     showToast(t('toastAbsenceRemoved'));
     apiPost({ action: 'deleteRecord', id: absId }).catch((err)=>{
       emp.absences = backup;
+      render();
+      showToast(err.message || t('toastRemoveErr'));
+    });
+    return;
+  }
+  const removeAdjustmentBtn = e.target.closest('[data-remove-adjustment]');
+  if(removeAdjustmentBtn){
+    const [empId, adjId] = removeAdjustmentBtn.getAttribute('data-remove-adjustment').split('|');
+    const emp = employees.find(x=>x.id===empId);
+    const backup = emp.adjustments;
+    emp.adjustments = emp.adjustments.filter(a=>a.id!==adjId);
+    openCardId = empId;
+    render();
+    showToast(t('toastAdjustmentRemoved'));
+    apiPost({ action: 'deleteRecord', id: adjId }).catch((err)=>{
+      emp.adjustments = backup;
       render();
       showToast(err.message || t('toastRemoveErr'));
     });
@@ -1193,6 +1328,38 @@ document.getElementById('confirmAdd').addEventListener('click', async ()=>{
     employees = employees.filter(x=>x.id!==id);
     render();
     showToast(err.message || t('addErrSave'));
+  });
+});
+
+// Adjustment modal
+const overlayAdjustment = document.getElementById('overlayAdjustment');
+document.getElementById('cancelAdjustment').addEventListener('click', ()=> overlayAdjustment.classList.remove('show'));
+overlayAdjustment.addEventListener('click', (e)=>{ if(e.target === overlayAdjustment) overlayAdjustment.classList.remove('show'); });
+
+document.getElementById('confirmAdjustment').addEventListener('click', async ()=>{
+  const date = document.getElementById('adjustmentDate').value;
+  const daysRaw = document.getElementById('adjustmentDays').value;
+  const reason = document.getElementById('adjustmentReason').value.trim();
+  const author = document.getElementById('adjustmentAuthor').value.trim();
+  const errEl = document.getElementById('adjustmentErr');
+  if(!date){ errEl.textContent = t('adjustmentErrDate'); return; }
+  const days = Number(daysRaw);
+  if(!daysRaw || isNaN(days) || days === 0){ errEl.textContent = t('adjustmentErrDays'); return; }
+  if(!reason){ errEl.textContent = t('adjustmentErrReason'); return; }
+  if(!author){ errEl.textContent = t('adjustmentErrAuthor'); return; }
+
+  const id = newId();
+  const emp = employees.find(x=>x.id===actionTargetId);
+  emp.adjustments = emp.adjustments || [];
+  emp.adjustments.push({ id, date, days, reason, author });
+  overlayAdjustment.classList.remove('show');
+  showToast(t('toastAdjustmentAdded', days));
+  openCardId = actionTargetId;
+  render();
+  apiPost({ action: 'addRecord', id, employeeId: actionTargetId, type: 'adjustment', start: date, end: date, days, reason, author }).catch((err)=>{
+    emp.adjustments = emp.adjustments.filter(a=>a.id!==id);
+    render();
+    showToast(err.message || t('adjustmentErrSave'));
   });
 });
 
