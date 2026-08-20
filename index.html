@@ -177,6 +177,28 @@
   .friday-item-disabled{ color: var(--ink-soft); cursor:default; }
   .friday-item-disabled input{ cursor:default; }
 
+  /* Écran dédié "Pointage des vendredis" */
+  .modal.friday-screen{ max-width: 640px; }
+  .friday-screen-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .friday-screen-header h2{ margin:0; }
+  .friday-screen-header button{ background:none; border:none; font-size:18px; cursor:pointer; color: var(--ink-soft); line-height:1; padding:4px; }
+  .friday-screen-controls{ display:flex; gap:10px; }
+  .friday-screen-controls .field{ flex:1; margin-bottom:10px; }
+  .friday-author-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; color: var(--ink-soft); margin-bottom:12px; flex-wrap:wrap; }
+  .friday-author-row button{ background:none; border:none; color: var(--accent); cursor:pointer; font-size:12.5px; text-decoration:underline; padding:0; }
+  .friday-screen-bulkbtns{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .friday-screen-list{ max-height: 42vh; overflow-y:auto; border:1px solid var(--border); border-radius:12px; margin-bottom:12px; }
+  .friday-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 10px 14px; border-bottom:1px solid var(--border); font-size:14px; }
+  .friday-row:last-child{ border-bottom:none; }
+  .friday-row-name{ font-weight:600; }
+  .friday-row-role{ font-size:12px; color: var(--ink-soft); font-weight:400; }
+  .friday-row-disabled{ color: var(--ink-soft); }
+  .friday-row input[type=checkbox]{ width:20px; height:20px; cursor:pointer; flex-shrink:0; }
+  .friday-row-disabled input[type=checkbox]{ cursor:default; }
+  .friday-screen-footer{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .friday-summary{ font-size:12.5px; color: var(--ink-soft); }
+  .friday-empty{ padding:20px; text-align:center; color: var(--ink-soft); font-size:13.5px; }
+
   .empty-state{
     text-align:center; padding: 60px 20px; color: var(--ink-soft);
   }
@@ -248,6 +270,7 @@
     <button class="btn btn-ghost btn-icon" id="openSettings" title="Connexion Google Sheets">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
+    <button class="btn btn-ghost" id="openFridayScreen">📅 <span id="openFridayScreenLabel">Pointage vendredis</span></button>
     <button class="btn btn-primary" id="openAddEmployee">+ Employé</button>
   </div>
 
@@ -353,6 +376,50 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="cancelAbsence">Annuler</button>
       <button class="btn btn-primary" id="confirmAbsence">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Écran dédié : Pointage des vendredis -->
+<div class="overlay" id="overlayFridayScreen">
+  <div class="modal friday-screen">
+    <div class="friday-screen-header">
+      <h2 id="fridayScreenTitle">Pointage des vendredis</h2>
+      <button type="button" id="closeFridayScreen" aria-label="Fermer">✕</button>
+    </div>
+
+    <div class="friday-screen-controls">
+      <div class="field">
+        <label for="fridayMonthPicker" id="fridayMonthLabel">Mois</label>
+        <input type="month" id="fridayMonthPicker">
+      </div>
+      <div class="field">
+        <label for="fridayDatePicker" id="fridayDateLabel">Vendredi</label>
+        <select id="fridayDatePicker"></select>
+      </div>
+    </div>
+
+    <div class="friday-author-row">
+      <span id="fridayAuthorDisplay"></span>
+      <button type="button" id="fridayAuthorChangeBtn"></button>
+    </div>
+
+    <div class="field" style="margin-bottom:10px;">
+      <input type="text" id="fridaySearchInput" placeholder="Rechercher un employé…">
+    </div>
+
+    <div class="friday-screen-bulkbtns">
+      <button class="btn btn-ghost" id="fridaySelectAll">Tout sélectionner</button>
+      <button class="btn btn-ghost" id="fridaySelectNone">Tout désélectionner</button>
+    </div>
+
+    <div class="friday-screen-list" id="fridayScreenList"></div>
+
+    <div class="err" id="fridayScreenErr"></div>
+
+    <div class="friday-screen-footer">
+      <span class="friday-summary" id="fridayScreenSummary"></span>
+      <button class="btn btn-primary" id="fridaySaveBtn">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -470,6 +537,34 @@ const TRANSLATIONS = {
     adjustmentMeta: (author) => `Par ${author}`,
     toastAdjustmentAdded: (days) => `Ajustement de ${days > 0 ? '+' : ''}${days} jour${Math.abs(days) > 1 ? 's' : ''} enregistré.`,
     toastAdjustmentRemoved: "Ajustement retiré.",
+
+    openFridayScreenLabel: "Pointage vendredis",
+    fridayScreenTitle: "Pointage des vendredis",
+    fridayMonthLabel: "Mois",
+    fridayDateLabel: "Vendredi",
+    fridaySearchPlaceholder: "Rechercher un employé…",
+    fridaySelectAll: "Tout sélectionner",
+    fridaySelectNone: "Tout désélectionner",
+    fridaySaveBtn: "Enregistrer",
+    fridayAuthorKnown: (name) => `Enregistré par : ${name}`,
+    fridayAuthorChange: "modifier",
+    fridayAuthorUnknown: "Enregistré par : non défini",
+    fridayAuthorSet: "définir",
+    fridayAuthorPromptMsg: "Votre nom (utilisé pour tous vos futurs pointages sur cet appareil) :",
+    fridayNoMatch: "Aucun employé ne correspond à la recherche.",
+    fridayCoveredByLeave: "Déjà couvert par un congé",
+    fridaySummaryChecked: (n, total) => `${n} sur ${total} coché${n > 1 ? 's' : ''}`,
+    fridayErrNoAuthor: "Merci d'indiquer votre nom avant d'enregistrer.",
+    fridayErrSave: "Erreur d'enregistrement — réessayez.",
+    fridayNoChange: "Aucun changement à enregistrer.",
+    fridaySavedSummary: (dateStr, added, removed, unchanged) => {
+      let msg = `Pointage du vendredi ${dateStr} enregistré avec succès.`;
+      const parts = [];
+      if (added > 0) parts.push(`${added} personne${added > 1 ? 's' : ''} enregistrée${added > 1 ? 's' : ''} comme ayant travaillé`);
+      if (removed > 0) parts.push(`${removed} retirée${removed > 1 ? 's' : ''}`);
+      if (unchanged > 0) parts.push(`${unchanged} sans changement`);
+      return parts.length ? `${msg} — ${parts.join(', ')}.` : msg;
+    },
 
     noConnectionText: "<b>Aucune connexion configurée.</b><br>Cliquez sur ⚙ en haut pour coller l'URL de votre Google Apps Script.",
     loadingFromSheets: "Chargement depuis Google Sheets…",
@@ -593,6 +688,34 @@ const TRANSLATIONS = {
     toastAdjustmentAdded: (days) => `Adjustment of ${days > 0 ? '+' : ''}${days} day${Math.abs(days) > 1 ? 's' : ''} recorded.`,
     toastAdjustmentRemoved: "Adjustment removed.",
 
+    openFridayScreenLabel: "Friday check-in",
+    fridayScreenTitle: "Friday check-in",
+    fridayMonthLabel: "Month",
+    fridayDateLabel: "Friday",
+    fridaySearchPlaceholder: "Search an employee…",
+    fridaySelectAll: "Select all",
+    fridaySelectNone: "Deselect all",
+    fridaySaveBtn: "Save",
+    fridayAuthorKnown: (name) => `Recorded by: ${name}`,
+    fridayAuthorChange: "change",
+    fridayAuthorUnknown: "Recorded by: not set",
+    fridayAuthorSet: "set",
+    fridayAuthorPromptMsg: "Your name (used for all your future check-ins on this device):",
+    fridayNoMatch: "No employee matches the search.",
+    fridayCoveredByLeave: "Already covered by a leave",
+    fridaySummaryChecked: (n, total) => `${n} of ${total} checked`,
+    fridayErrNoAuthor: "Please enter your name before saving.",
+    fridayErrSave: "Save error — please try again.",
+    fridayNoChange: "No change to save.",
+    fridaySavedSummary: (dateStr, added, removed, unchanged) => {
+      let msg = `Friday ${dateStr} check-in saved successfully.`;
+      const parts = [];
+      if (added > 0) parts.push(`${added} ${added > 1 ? 'people' : 'person'} recorded as having worked`);
+      if (removed > 0) parts.push(`${removed} removed`);
+      if (unchanged > 0) parts.push(`${unchanged} unchanged`);
+      return parts.length ? `${msg} — ${parts.join(', ')}.` : msg;
+    },
+
     noConnectionText: "<b>No connection configured.</b><br>Click ⚙ above to paste your Google Apps Script URL.",
     loadingFromSheets: "Loading from Google Sheets…",
     loadErrorText: "Unable to load data.<br>Check the URL (⚙) and that the Web App is deployed with \"Anyone\" access.",
@@ -706,6 +829,17 @@ function applyStaticTranslations(){
   document.getElementById('cancelAdjustment').textContent = t('btnCancel');
   document.getElementById('confirmAdjustment').textContent = t('btnSave');
 
+  document.getElementById('openFridayScreenLabel').textContent = t('openFridayScreenLabel');
+  document.getElementById('fridayScreenTitle').textContent = t('fridayScreenTitle');
+  document.getElementById('fridayMonthLabel').textContent = t('fridayMonthLabel');
+  document.getElementById('fridayDateLabel').textContent = t('fridayDateLabel');
+  document.getElementById('fridaySearchInput').placeholder = t('fridaySearchPlaceholder');
+  document.getElementById('fridaySelectAll').textContent = t('fridaySelectAll');
+  document.getElementById('fridaySelectNone').textContent = t('fridaySelectNone');
+  document.getElementById('fridaySaveBtn').textContent = t('fridaySaveBtn');
+  renderFridayAuthorRow();
+  if(fridayScreenOpen) renderFridayList();
+
   document.getElementById('langFr').classList.toggle('active', currentLang === 'fr');
   document.getElementById('langEn').classList.toggle('active', currentLang === 'en');
 }
@@ -726,6 +860,14 @@ let searchTerm = '';
 let openCardId = null;
 let actionTargetId = null;
 let editTargetId = null;
+
+// État de l'écran "Pointage des vendredis"
+let fridayScreenOpen = false;
+let fridaySelectedDate = null;       // 'YYYY-MM-DD' du vendredi actuellement affiché
+let fridayInitialChecked = new Set(); // employeeIds cochés au moment de l'ouverture (référence pour le diff)
+let fridayCurrentChecked = new Set(); // employeeIds cochés à l'instant présent (état live des cases)
+let fridaySearchTerm = '';
+let fridaySaving = false;
 
 const listContainer = document.getElementById('listContainer');
 const countText = document.getElementById('countText');
@@ -878,6 +1020,258 @@ function fmtDate(iso){
 function initials(name){
   return name.trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase();
 }
+
+// ===================================================
+// Écran "Pointage des vendredis"
+// ===================================================
+
+// Tous les vendredis (ISO) d'un mois donné 'YYYY-MM'.
+function fridaysInMonth_(yearMonth){
+  const [y, m] = yearMonth.split('-').map(Number);
+  const result = [];
+  const d = new Date(y, m - 1, 1);
+  while(d.getMonth() === m - 1){
+    if(d.getDay() === 5) result.push(Utilities_formatDate_(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return result;
+}
+
+// Le vendredi le plus proche : aujourd'hui s'il est vendredi, sinon le prochain.
+function nearestFridayIso_(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const diff = (5 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return Utilities_formatDate_(d);
+}
+
+function getStoredAuthorName_(){
+  return (localStorage.getItem('conges_author_name') || '').trim();
+}
+function setStoredAuthorName_(name){
+  localStorage.setItem('conges_author_name', name.trim());
+}
+
+function renderFridayAuthorRow(){
+  const display = document.getElementById('fridayAuthorDisplay');
+  const btn = document.getElementById('fridayAuthorChangeBtn');
+  if(!display || !btn) return;
+  const name = getStoredAuthorName_();
+  if(name){
+    display.textContent = t('fridayAuthorKnown', name);
+    btn.textContent = `(${t('fridayAuthorChange')})`;
+  } else {
+    display.textContent = t('fridayAuthorUnknown');
+    btn.textContent = `(${t('fridayAuthorSet')})`;
+  }
+}
+
+function promptForAuthorName_(){
+  const current = getStoredAuthorName_();
+  const name = window.prompt(t('fridayAuthorPromptMsg'), current);
+  if(name && name.trim()){
+    setStoredAuthorName_(name);
+    renderFridayAuthorRow();
+  }
+}
+
+// Recalcule, à partir des données locales déjà chargées (employees[].fridayOn),
+// quels employés sont déjà cochés pour la date sélectionnée. C'est ce qui
+// garantit que l'écran affiche immédiatement l'état existant, jamais une
+// liste vide, dès qu'on ouvre un vendredi déjà pointé.
+function computeCheckedSetForDate_(dateIso){
+  const s = new Set();
+  employees.forEach(emp => {
+    if((emp.fridayOn || []).some(f => f.date === dateIso)) s.add(emp.id);
+  });
+  return s;
+}
+
+function populateFridayDatePicker_(selectDate){
+  const monthPicker = document.getElementById('fridayMonthPicker');
+  const datePicker = document.getElementById('fridayDatePicker');
+  const fridays = fridaysInMonth_(monthPicker.value);
+  datePicker.innerHTML = fridays.map(f => `<option value="${f}">${fmtDate(f)}</option>`).join('');
+  const target = fridays.includes(selectDate) ? selectDate : (fridays[0] || null);
+  if(target) datePicker.value = target;
+  return target;
+}
+
+function openFridayDate_(dateIso){
+  if(!dateIso) return;
+  fridaySelectedDate = dateIso;
+  fridayInitialChecked = computeCheckedSetForDate_(dateIso);
+  fridayCurrentChecked = new Set(fridayInitialChecked);
+  document.getElementById('fridayScreenErr').textContent = '';
+  renderFridayList();
+}
+
+function renderFridayList(){
+  const listEl = document.getElementById('fridayScreenList');
+  const summaryEl = document.getElementById('fridayScreenSummary');
+  if(!listEl || !fridaySelectedDate) return;
+
+  const term = fridaySearchTerm.trim().toLowerCase();
+  const dateObj = new Date(fridaySelectedDate + 'T00:00:00');
+  const visible = employees
+    .filter(e => e.name.toLowerCase().includes(term))
+    .slice()
+    .sort((a,b)=> a.name.localeCompare(b.name));
+
+  if(visible.length === 0){
+    listEl.innerHTML = `<div class="friday-empty">${t('fridayNoMatch')}</div>`;
+  } else {
+    listEl.innerHTML = visible.map(emp => {
+      const disabled = isWithinAnyLeave_(emp, dateObj);
+      const checked = !disabled && fridayCurrentChecked.has(emp.id);
+      return `
+        <label class="friday-row ${disabled ? 'friday-row-disabled' : ''}" ${disabled ? `title="${t('fridayCoveredByLeave')}"` : ''}>
+          <span>
+            <span class="friday-row-name">${escapeHtml(emp.name)}</span>
+            ${emp.role ? `<span class="friday-row-role"> — ${escapeHtml(emp.role)}</span>` : ''}
+          </span>
+          <input type="checkbox" data-friday-screen-check="${emp.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+        </label>`;
+    }).join('');
+  }
+
+  const totalCheckable = employees.filter(e => !isWithinAnyLeave_(e, dateObj)).length;
+  summaryEl.textContent = t('fridaySummaryChecked', fridayCurrentChecked.size, totalCheckable);
+}
+
+function openFridayScreen(){
+  fridayScreenOpen = true;
+  renderFridayAuthorRow();
+  const nearest = nearestFridayIso_();
+  document.getElementById('fridayMonthPicker').value = nearest.slice(0,7);
+  const target = populateFridayDatePicker_(nearest);
+  openFridayDate_(target);
+  document.getElementById('overlayFridayScreen').classList.add('show');
+
+  // Rafraîchit les données depuis le serveur à l'ouverture, pour être sûr
+  // de partir d'un état à jour même si un autre administrateur a modifié
+  // des pointages entre-temps. Ne bloque pas l'affichage (déjà rempli
+  // depuis les données locales ci-dessus) : simple mise à jour silencieuse.
+  apiGet().then(data => {
+    employees = data.employees || [];
+    if(fridayScreenOpen && fridaySelectedDate){
+      openFridayDate_(fridaySelectedDate);
+    }
+  }).catch(()=>{ /* pas grave : on garde les données locales déjà affichées */ });
+}
+
+function closeFridayScreen(){
+  fridayScreenOpen = false;
+  document.getElementById('overlayFridayScreen').classList.remove('show');
+}
+
+document.getElementById('openFridayScreen').addEventListener('click', openFridayScreen);
+document.getElementById('closeFridayScreen').addEventListener('click', closeFridayScreen);
+document.getElementById('overlayFridayScreen').addEventListener('click', (e)=>{
+  if(e.target.id === 'overlayFridayScreen') closeFridayScreen();
+});
+document.getElementById('fridayAuthorChangeBtn').addEventListener('click', promptForAuthorName_);
+
+document.getElementById('fridayMonthPicker').addEventListener('change', ()=>{
+  const target = populateFridayDatePicker_(null);
+  openFridayDate_(target);
+});
+document.getElementById('fridayDatePicker').addEventListener('change', (e)=>{
+  openFridayDate_(e.target.value);
+});
+document.getElementById('fridaySearchInput').addEventListener('input', (e)=>{
+  fridaySearchTerm = e.target.value;
+  renderFridayList();
+});
+document.getElementById('fridayScreenList').addEventListener('change', (e)=>{
+  const cb = e.target.closest('[data-friday-screen-check]');
+  if(!cb) return;
+  const empId = cb.getAttribute('data-friday-screen-check');
+  if(cb.checked) fridayCurrentChecked.add(empId);
+  else fridayCurrentChecked.delete(empId);
+  document.getElementById('fridayScreenSummary').textContent =
+    t('fridaySummaryChecked', fridayCurrentChecked.size, employees.filter(e => !isWithinAnyLeave_(e, new Date(fridaySelectedDate + 'T00:00:00'))).length);
+});
+document.getElementById('fridaySelectAll').addEventListener('click', ()=>{
+  const dateObj = new Date(fridaySelectedDate + 'T00:00:00');
+  employees
+    .filter(e => e.name.toLowerCase().includes(fridaySearchTerm.trim().toLowerCase()))
+    .filter(e => !isWithinAnyLeave_(e, dateObj))
+    .forEach(e => fridayCurrentChecked.add(e.id));
+  renderFridayList();
+});
+document.getElementById('fridaySelectNone').addEventListener('click', ()=>{
+  employees
+    .filter(e => e.name.toLowerCase().includes(fridaySearchTerm.trim().toLowerCase()))
+    .forEach(e => fridayCurrentChecked.delete(e.id));
+  renderFridayList();
+});
+
+document.getElementById('fridaySaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('fridayScreenErr');
+  errEl.textContent = '';
+  const author = getStoredAuthorName_();
+  if(!author){
+    promptForAuthorName_();
+    if(!getStoredAuthorName_()){
+      errEl.textContent = t('fridayErrNoAuthor');
+      return;
+    }
+  }
+
+  // Ne construit que les entrées réellement modifiées depuis l'ouverture de
+  // ce vendredi (comparaison avec fridayInitialChecked) : on n'envoie jamais
+  // un statut "inchangé" au serveur, ce qui garde la charge réseau minimale
+  // même avec 55 employés.
+  const entries = [];
+  employees.forEach(emp => {
+    const wasChecked = fridayInitialChecked.has(emp.id);
+    const isChecked = fridayCurrentChecked.has(emp.id);
+    if(wasChecked !== isChecked){
+      entries.push({ employeeId: emp.id, worked: isChecked });
+    }
+  });
+
+  if(entries.length === 0){
+    showToast(t('fridayNoChange'));
+    return;
+  }
+
+  if(fridaySaving) return;
+  fridaySaving = true;
+  const saveBtn = document.getElementById('fridaySaveBtn');
+  saveBtn.disabled = true;
+
+  try{
+    const result = await apiPost({ action: 'setFridayBulk', date: fridaySelectedDate, author: getStoredAuthorName_(), entries });
+    // Resynchronise l'état local à partir de la réponse serveur (source de
+    // vérité), pour que la fiche employé et le calcul du solde reflètent
+    // immédiatement le nouveau pointage sans recharger toute la page.
+    employees.forEach(emp => {
+      const isChecked = fridayCurrentChecked.has(emp.id);
+      const wasChecked = fridayInitialChecked.has(emp.id);
+      if(wasChecked === isChecked) return;
+      emp.fridayOn = emp.fridayOn || [];
+      if(isChecked){
+        if(!emp.fridayOn.some(f => f.date === fridaySelectedDate)){
+          emp.fridayOn = emp.fridayOn.concat([{ id: newId(), date: fridaySelectedDate, author: getStoredAuthorName_(), createdAt: Date.now() }]);
+        }
+      } else {
+        emp.fridayOn = emp.fridayOn.filter(f => f.date !== fridaySelectedDate);
+      }
+    });
+    fridayInitialChecked = new Set(fridayCurrentChecked);
+    render();
+    renderFridayList();
+    showToast(t('fridaySavedSummary', fmtDate(fridaySelectedDate), result.added, result.removed, result.unchanged));
+  }catch(err){
+    errEl.textContent = err.message || t('fridayErrSave');
+  }finally{
+    fridaySaving = false;
+    saveBtn.disabled = false;
+  }
+});
 
 async function apiGet(){
   const url = API_URL + (API_URL.includes('?') ? '&' : '?') + '_=' + Date.now();
